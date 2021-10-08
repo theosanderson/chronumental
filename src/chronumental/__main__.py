@@ -15,12 +15,16 @@ import numpyro.distributions as dist
 import numpyro.optim as optim
 from numpyro.infer import SVI, Trace_ELBO
 from numpyro.infer.autoguide import AutoDelta
-from . import _version
+try:
+    from . import _version
+    version = _version.version
+except ImportError:
+    version = "dev"
 import argparse
 
 
 def main():
-    print(f"Chronumental {_version.version}")
+    print(f"Chronumental {version}")
     print("")
     parser = argparse.ArgumentParser(
         description=
