@@ -5,7 +5,7 @@ Chronumental is a tool for creating a "time-tree", where each internal node is a
 
 What sets chronumental apart from most other tools is that it scales to extremely large trees, which can contain millions of nodes. Chronumental uses JAX, which means it can optimise the tree rapidly if you have a GPU available, but also performs reasonably with a CPU.
 
-
+Chronumental is in an early stage of development and has not been benchmarked or subject to peer-review.
 
 ### Similar tools
 [TreeTime](https://github.com/neherlab/treetime) is a much more advanced tool for inferring time trees. If you have a dataset of thousands rather than millions of nodes you are best off trying it.
