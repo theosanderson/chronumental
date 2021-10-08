@@ -15,11 +15,13 @@ import numpyro.distributions as dist
 import numpyro.optim as optim
 from numpyro.infer import SVI, Trace_ELBO
 from numpyro.infer.autoguide import AutoDelta
-
+from . import _version
 import argparse
 
 
 def main():
+    print(f"Chronumental {_version.version}")
+    print("")
     parser = argparse.ArgumentParser(
         description=
         'Convert a distance tree into time tree with distances in days.')
