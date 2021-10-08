@@ -259,5 +259,5 @@ def main():
         output_handle = open(f"timetree_{args.t}", "w")
     Phylo.write(tree2, output_handle, "newick")
 
-def __main__():
+if __name__ == "__main__":
     main()
