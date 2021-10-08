@@ -30,13 +30,13 @@ def main():
         description=
         'Convert a distance tree into time tree with distances in days.')
     parser.add_argument(
-        '-t',
+        '--tree',
         help=
         'an input newick tree, potentially gzipped, with distances as raw number of mutations',
         required=True)
 
     parser.add_argument(
-        '-m',
+        '--dates',
         help=
         'A metadata file with columns strain and date (in 2020-01-02 format)',
         required=True)
@@ -80,7 +80,7 @@ def main():
     genome_size = args.g
 
     print("Reading metadata")
-    metadata = pd.read_table(args.m, low_memory=False)
+    metadata = pd.read_table(args.dates, low_memory=False)
 
     if "date" not in metadata:
         raise Exception("Metadata has no date column")
@@ -89,10 +89,10 @@ def main():
         raise Exception("Metadata has no strain column")
 
     def read_tree():
-        if args.t.endswith('.gz'):
+        if args.tree.endswith('.gz'):
             return Phylo.read(gzip.open(args.t, "rt"), 'newick')
         else:
-            return Phylo.read(args.t, 'newick')
+            return Phylo.read(args.tree, 'newick')
 
     print("Reading tree")
     tree = read_tree()
@@ -259,10 +259,10 @@ def main():
             node_name = node.name
         node.branch_length = branch_length_lookup[node_name]
 
-    if args.t.endswith(".gz"):
-        output_handle = gzip.open(f"timetree_{args.t}", "wt")
+    if args.tree.endswith(".gz"):
+        output_handle = gzip.open(f"timetree_{args.tree}", "wt")
     else:
-        output_handle = open(f"timetree_{args.t}", "w")
+        output_handle = open(f"timetree_{args.tree}", "w")
     Phylo.write(tree2, output_handle, "newick")
 
 if __name__ == "__main__":
