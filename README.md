@@ -22,4 +22,4 @@ chronumental --tree public-2021-10-06.all.nwk.gz --dates public-2021-10-06.metad
 ```
 
 ### Similar tools
-[TreeTime](https://github.com/neherlab/treetime) is a much more advanced tool for inferring time trees. If you have a dataset of thousands rather than millions of nodes you are best off trying it.
+[TreeTime](https://github.com/neherlab/treetime) is a much more advanced tool for inferring time trees. If you have a dataset of <10,000 rather than millions of nodes you are best off trying it.
