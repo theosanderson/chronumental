@@ -4,7 +4,8 @@ import pandas as pd
 from Bio import Phylo
 import jax.numpy as jnp
 import numpy as np
-from . import helpers
+#from . 
+import helpers
 
 import pandas as pd
 import tqdm
@@ -65,12 +66,12 @@ def main():
                         type=float,
                         help="Scale factor for branch length distribution")
 
-    parser.add_argument('-s',
+    parser.add_argument('--steps',
                         default=1000,
                         type=int,
                         help="Number of steps to use for the SVI")
 
-    parser.add_argument('-lr',
+    parser.add_argument('--lr',
                         default=0.1,
                         type=float,
                         help="Adam learning rate")
@@ -90,7 +91,7 @@ def main():
 
     def read_tree():
         if args.tree.endswith('.gz'):
-            return Phylo.read(gzip.open(args.t, "rt"), 'newick')
+            return Phylo.read(gzip.open(args.tree, "rt"), 'newick')
         else:
             return Phylo.read(args.tree, 'newick')
 
@@ -226,7 +227,7 @@ def main():
     svi = SVI(model, guide, optim.Adam(args.lr), Trace_ELBO())
     state = svi.init(jax.random.PRNGKey(0))
 
-    num_steps = args.s
+    num_steps = args.steps
     for step in range(num_steps):
         state, loss = svi.update(state)
         if step % 10 == 0:
@@ -264,6 +265,12 @@ def main():
     else:
         output_handle = open(f"timetree_{args.tree}", "w")
     Phylo.write(tree2, output_handle, "newick")
+
+    new_dates_absolute = [lookup[reference_point] + datetime.timedelta(days=x) for x in new_dates.tolist()]
+    
+    output_meta = pd.DataFrame({'strain': terminal_names,
+                                'date': new_dates_absolute})
+    output_meta.to_csv(f"timetree_{args.tree}.tsv", sep="\t", index=False)
 
 if __name__ == "__main__":
     main()
