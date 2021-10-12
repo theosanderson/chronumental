@@ -23,6 +23,13 @@ except ImportError:
     version = "dev"
 import argparse
 
+def prepend_to_file_name(full_path, to_prepend):
+    if "/" in full_path:
+        path, file = full_path.rsplit('/', 1)
+        return f"{path}/{to_prepend}_{file}"
+    else:
+        return f"{to_prepend}_{full_path}"
+
 
 def main():
     print(f"Chronumental {version}")
@@ -122,6 +129,7 @@ def main():
         terminal_targets = {}
         for terminal in tqdm.tqdm(tree.root.get_terminals(),
                                   "Creating target date array"):
+            terminal.name = terminal.name.replace("'", "")
             if terminal.name in lookup:
                 date = lookup[terminal.name]
                 diff = (date - lookup[reference_point]).days
@@ -152,6 +160,8 @@ def main():
                              "finding initial branch_lengths"):
         if node.name == "":
             node.name = f"internal_node_{i}"
+        if node.branch_length is None:
+            node.branch_length = 0
         initial_branch_lengths[node.name] = node.branch_length
     names_init = initial_branch_lengths.keys()
     branch_distances_array = np.array(
@@ -187,6 +197,12 @@ def main():
 
     substitutions_per_site_per_year = 1e-3
     genome_size = 30000
+
+    print(branch_distances_array)
+
+    print(genome_size)
+
+    print(substitutions_per_site_per_year)
 
     initial_time = 365 * (
         branch_distances_array / genome_size
@@ -259,11 +275,13 @@ def main():
         else:
             node_name = node.name
         node.branch_length = branch_length_lookup[node_name]
+    
+    output_tree = prepend_to_file_name(args.tree,"timetree_")
 
     if args.tree.endswith(".gz"):
-        output_handle = gzip.open(f"timetree_{args.tree}", "wt")
+        output_handle = gzip.open(output_tree, "wt")
     else:
-        output_handle = open(f"timetree_{args.tree}", "w")
+        output_handle = open(output_tree, "w")
     Phylo.write(tree2, output_handle, "newick")
 
     new_dates_absolute = [lookup[reference_point] + datetime.timedelta(days=x) for x in new_dates.tolist()]
