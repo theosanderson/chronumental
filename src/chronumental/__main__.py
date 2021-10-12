@@ -22,6 +22,10 @@ except ImportError:
     version = "dev"
 import argparse
 
+def prepend_to_file_name(full_path, to_prepend):
+        dir_name, file_name = full_path.split("/")
+        file_name = to_prepend + file_name
+        return dir_name + "/" + file_name
 
 def main():
     print(f"Chronumental {version}")
@@ -90,7 +94,7 @@ def main():
 
     def read_tree():
         if args.tree.endswith('.gz'):
-            return Phylo.read(gzip.open(args.t, "rt"), 'newick')
+            return Phylo.read(gzip.open(args.tree, "rt"), 'newick')
         else:
             return Phylo.read(args.tree, 'newick')
 
@@ -258,11 +262,13 @@ def main():
         else:
             node_name = node.name
         node.branch_length = branch_length_lookup[node_name]
+    
+    output_tree = prepend_to_file_name(args.tree,"timetree_")
 
     if args.tree.endswith(".gz"):
-        output_handle = gzip.open(f"timetree_{args.tree}", "wt")
+        output_handle = gzip.open(output_tree, "wt")
     else:
-        output_handle = open(f"timetree_{args.tree}", "w")
+        output_handle = open(output_tree, "w")
     Phylo.write(tree2, output_handle, "newick")
 
 if __name__ == "__main__":

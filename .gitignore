@@ -8,3 +8,6 @@ src/chronumental.egg-info/dependency_links.txt
 src/chronumental.egg-info/PKG-INFO
 src/chronumental.egg-info/SOURCES.txt
 src/chronumental.egg-info/top_level.txt
+src/chronumental/__pycache__/__init__.cpython-39.pyc
+src/chronumental/__pycache__/__main__.cpython-39.pyc
+src/chronumental/__pycache__/helpers.cpython-39.pyc
