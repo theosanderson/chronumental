@@ -23,9 +23,12 @@ except ImportError:
 import argparse
 
 def prepend_to_file_name(full_path, to_prepend):
-        dir_name, file_name = full_path.split("/")
-        file_name = to_prepend + file_name
-        return dir_name + "/" + file_name
+    if "/" in full_path:
+        path, file = full_path.rsplit('/', 1)
+        return f"{path}/{to_prepend}_{file}"
+    else:
+        return f"{to_prepend}_{full_path}"
+
 
 def main():
     print(f"Chronumental {version}")
@@ -125,6 +128,7 @@ def main():
         terminal_targets = {}
         for terminal in tqdm.tqdm(tree.root.get_terminals(),
                                   "Creating target date array"):
+            terminal.name = terminal.name.replace("'", "")
             if terminal.name in lookup:
                 date = lookup[terminal.name]
                 diff = (date - lookup[reference_point]).days
@@ -155,6 +159,8 @@ def main():
                              "finding initial branch_lengths"):
         if node.name == "":
             node.name = f"internal_node_{i}"
+        if node.branch_length is None:
+            node.branch_length = 0
         initial_branch_lengths[node.name] = node.branch_length
     names_init = initial_branch_lengths.keys()
     branch_distances_array = np.array(
@@ -190,6 +196,12 @@ def main():
 
     substitutions_per_site_per_year = 1e-3
     genome_size = 30000
+
+    print(branch_distances_array)
+
+    print(genome_size)
+
+    print(substitutions_per_site_per_year)
 
     initial_time = 365 * (
         branch_distances_array / genome_size
