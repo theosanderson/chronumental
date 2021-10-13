@@ -4,8 +4,7 @@ import pandas as pd
 from Bio import Phylo
 import jax.numpy as jnp
 import numpy as np
-#from . 
-import helpers
+from . import helpers
 
 import pandas as pd
 import tqdm
@@ -87,6 +86,8 @@ def main():
     substitutions_per_site_per_year = args.c
     genome_size = args.g
 
+   
+
     print("Reading metadata")
     metadata = pd.read_table(args.dates, low_memory=False)
 
@@ -129,6 +130,7 @@ def main():
         terminal_targets = {}
         for terminal in tqdm.tqdm(tree.root.get_terminals(),
                                   "Creating target date array"):
+            
             terminal.name = terminal.name.replace("'", "")
             if terminal.name in lookup:
                 date = lookup[terminal.name]
@@ -138,8 +140,10 @@ def main():
 
     target_dates = get_target_dates()
     terminal_names = target_dates.keys()
+    
     terminal_target_dates_array = jnp.asarray(
         [float(target_dates[x]) for x in terminal_names])
+    print(f"Found {len(terminal_names)} terminals")
     terminal_name_to_pos = {x: i for i, x in enumerate(terminal_names)}
 
     def assign_paths(tree):
@@ -288,7 +292,9 @@ def main():
     
     output_meta = pd.DataFrame({'strain': terminal_names,
                                 'date': new_dates_absolute})
-    output_meta.to_csv(f"timetree_{args.tree}.tsv", sep="\t", index=False)
+
+    output_meta_file = prepend_to_file_name(args.tree,"timetree_meta_")
+    output_meta.to_csv(f"{output_meta_file}.tsv", sep="\t", index=False)
 
 if __name__ == "__main__":
     main()
