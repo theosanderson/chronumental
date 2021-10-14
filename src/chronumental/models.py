@@ -6,21 +6,22 @@ from numpyro.infer.autoguide import AutoDelta
 from . import helpers
 
 class FixedClock(object):
-    def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array):
+    def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array,terminal_target_errors_array, expected_min_days_between_transmissions):
         self.rows = rows
         self.cols = cols
         self.branch_distances_array = branch_distances_array
         self.clock_rate = clock_rate
         self.terminal_target_dates_array = terminal_target_dates_array
+        self.terminal_target_errors_array = terminal_target_errors_array
         self.variance_branch_length = variance_branch_length
         self.variance_dates = variance_dates
 
         self.initial_time = 365 * (
         branch_distances_array 
-    ) / clock_rate + 3  # We add 3 to this prior because tranmsmission after zero days is relatively unlikely
+    ) / clock_rate + expected_min_days_between_transmissions  # We add to this prior because tranmsmission after zero days is relatively unlikely
 
     
-        self.guide = AutoDelta(self.model)
+        
 
 
 
@@ -57,9 +58,27 @@ class FixedClock(object):
         final_dates = numpyro.sample(
             f"final_dates",
             dist.Normal(calced_dates,
-                        self.variance_dates * jnp.ones(calced_dates.shape[0])),
+                        self.variance_dates * self.terminal_target_errors_array),
             obs=self.terminal_target_dates_array)
 
+    
+    def guide(self):
+        time_length_mu = numpyro.param("time_length_mu", self.initial_time,
+                                constraint=dist.constraints.positive)
+        time_length_sigma = numpyro.param("time_length_sigma", jnp.ones(self.initial_time.shape)*1e-3,
+                                constraint=dist.constraints.positive)
+
+        mutation_rate_mu = numpyro.param("mutation_rate_mu", self.clock_rate,
+                                constraint=dist.constraints.positive)
+        mutation_rate_sigma = numpyro.param("mutation_rate_sigma", self.clock_rate,
+                                constraint=dist.constraints.positive)
+        
+        branch_times = numpyro.sample("latent_time_length",dist.Delta(time_length_mu))
+        mutation_rate = numpyro.sample(f"latent_mutation_rate", dist.TruncatedNormal(0,mutation_rate_mu,mutation_rate_sigma ))
+
     def get_branch_times(self , params):
-        return params['latent_time_length_auto_loc']
+        return params['time_length_mu']
+
+    def get_mutation_rate(self , params):
+        return params['mutation_rate_mu']
  

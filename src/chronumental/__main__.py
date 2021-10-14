@@ -35,7 +35,7 @@ def prepend_to_file_name(full_path, to_prepend):
 
 def main():
     print(f"Chronumental {version}")
-    print("")
+
     parser = argparse.ArgumentParser(
         description=
         'Convert a distance tree into time tree with distances in days.')
@@ -95,6 +95,16 @@ def main():
                         type=bool,
                         help="Should we name all nodes in the output?")
 
+    parser.add_argument('--expected_min_between_transmissions',
+                        default=3,
+                        type=int,
+                        help="For forming the prior, an expected minimum time between transmissions")
+
+    parser.add_argument('--only_use_full_dates',
+                        default=False,
+                        type=bool,
+                        help="Should we only use full dates?")
+
 
 
     args = parser.parse_args()
@@ -113,24 +123,33 @@ def main():
     print("Processing dates")
     input.process_dates(metadata)
 
-    full = input.get_complete_dates(metadata)
-    lookup = dict(zip(full['strain'], full['processed_date']))
+    full = input.get_present_dates(metadata, only_use_full_dates =args.only_use_full_dates)
+    lookup = dict(zip(full['strain'], 
+    
+    zip(full['processed_date'], full['processed_date_error'])))
+ 
 
     # Get oldest date in full, and corresponding strain:
-    oldest_date, reference_point = input.get_oldest(full)
+    reference_point = input.get_oldest(full)
 
     print(f"Using {reference_point} as an arbitrary reference point")
-    lookup[reference_point] = oldest_date
+    #lookup[reference_point] = oldest_date_and_error
 
 
 
-    target_dates = input.get_target_dates(tree, lookup, reference_point)
+    target_dates, target_errors = input.get_target_dates(tree, lookup, reference_point)
     terminal_names = sorted(target_dates.keys())
     
     terminal_target_dates_array = jnp.asarray(
         [float(target_dates[x]) for x in terminal_names])
 
-    print(f"Found {len(terminal_names)} terminals with usable date metadata")
+    terminal_target_errors_array = jnp.asarray(
+        [float(target_errors[x]) for x in terminal_names])
+
+
+    print(f"Found {len(terminal_names)} terminals with usable date metadata{' [full date mode is on]' if args.only_use_full_dates else ''}")
+
+    
 
     terminal_name_to_pos = {x: i for i, x in enumerate(terminal_names)}
 
@@ -148,9 +167,7 @@ def main():
     cols = jnp.asarray(cols)
     print("Cols array created")
 
-    print(branch_distances_array)
-
-    my_model = models.FixedClock(rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array)
+    my_model = models.FixedClock(rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
@@ -159,7 +176,7 @@ def main():
     num_steps = args.steps
     for step in range(num_steps):
         state, loss = svi.update(state)
-        if step % 10 == 0:
+        if step % 10 == 0 or step==num_steps-1 :
             params = svi.get_params(state)
             times = my_model.get_branch_times(params)
             new_dates = my_model.calc_dates(times)
@@ -175,7 +192,7 @@ def main():
             length_cor = np.corrcoef(
                 branch_distances_array,
                 times)[0, 1]  # This correlation should be relatively high
-            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.4f}\tMean date error:{date_error:10.4f}\tMax date error:{max_date_error:10.4f}\tLength correlation:{length_cor:10.4f}\tInferred mutation rate:{svi.get_params(state)['latent_mutation_rate_auto_loc']:10.4f}")
+            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.2f}\tMean date error:{date_error:10.1f}\tMax date error:{max_date_error:10.4f} \t Length correlation:{length_cor:10.4f}\tInferred mutation rate:{my_model.get_mutation_rate(params):10.4f}")
 
     tree2 = input.read_tree(args.tree)
 
@@ -206,9 +223,10 @@ def main():
     
 
     tree2.write_tree_newick(args.tree_out)
+    print("")
     print(f"Wrote tree to {args.tree_out}")
 
-    origin_date = lookup[reference_point]
+    origin_date = lookup[reference_point][0]
     output_dates = {name: origin_date + datetime.timedelta(days=x) for name,x in total_lengths_in_time.items()}
 
     names, values = zip(*output_dates.items())

@@ -17,23 +17,38 @@ def get_metadata(metadata_file):
 
 def read_tree(tree_file):
         return treeswift.read_tree(tree_file, schema="newick")
-def get_datetime(x):
+def get_datetime_and_error(x):
         try:
-            return datetime.datetime.strptime(x, '%Y-%m-%d')
+            return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
         except ValueError:
-            return None
+            try:
+                return [datetime.datetime.strptime(x, '%Y-%m') + datetime.timedelta(days=30//2),30]
+            except ValueError:
+                try:
+                    return [datetime.datetime.strptime(x, '%Y') +datetime.timedelta(days=365//2),365]
+                except ValueError:
+                    if x != "" or x=="?":
+                        print(f"Warning: could not parse date {x}, it will not feature in calculation.")
+                    return [None,None]
 
 def process_dates(metadata):
-    metadata['processed_date'] = metadata['date'].apply(get_datetime)
+    metadata['date_and_error'] = metadata['date'].apply(get_datetime_and_error)
+    metadata['processed_date'] = metadata['date_and_error'].apply(lambda x: x[0])
+    metadata['processed_date_error'] = metadata['date_and_error'].apply(lambda x: x[1])
+    metadata.drop(columns=['date_and_error'], inplace=True)
 
-def get_complete_dates(metadata):
-    return metadata[~metadata['processed_date'].isnull()]
+def get_present_dates(metadata, only_use_full_dates):
+    if only_use_full_dates:
+        return metadata[(~metadata['processed_date'].isnull()) & (metadata['processed_date_error'] <5)]
+    else:
+        return metadata[~metadata['processed_date'].isnull()]
 
 def get_oldest(full):
     oldest_date = full['processed_date'].min()
-    reference_point = full[full['processed_date'] ==
-                           oldest_date]['strain'].values[0]
-    return oldest_date, reference_point
+    the_oldest = full[full['processed_date'] ==
+                           oldest_date]
+    reference_point = the_oldest['strain'].values[0]
+    return reference_point
 
 def get_target_dates(tree, lookup, reference_point):
     """
@@ -41,15 +56,17 @@ def get_target_dates(tree, lookup, reference_point):
     Dates are relative to the date of the reference point, which forms an arbitary origin.
     """
     terminal_targets = {}
+    terminal_targets_error = {}
     for terminal in tqdm.tqdm(tree.traverse_leaves(),
                                 "Creating target date array"):
         
         terminal.label = terminal.label.replace("'", "")
         if terminal.label in lookup:
-            date = lookup[terminal.label]
-            diff = (date - lookup[reference_point]).days
+            date = lookup[terminal.label][0]
+            diff = (date - lookup[reference_point][0]).days
             terminal_targets[terminal.label] = diff
-    return terminal_targets
+            terminal_targets_error[terminal.label] = lookup[terminal.label][1]
+    return terminal_targets, terminal_targets_error
 
 
 def get_initial_branch_lengths_and_name_all_nodes(tree):
