@@ -5,22 +5,18 @@ import tqdm
 import treeswift
 
 def get_metadata(metadata_file):
+    fields = ['date', 'strain']
+
     print("Reading metadata")
-    metadata = pd.read_table(metadata_file, low_memory=False)
+    metadata = pd.read_table(metadata_file, low_memory=False, usecols=fields)
 
-    if "date" not in metadata:
-        raise Exception("Metadata has no date column")
-
-    if "strain" not in metadata:
-        raise Exception("Metadata has no strain column")
+    for field in fields:
+        if field not in metadata:
+            raise Exception(f"Metadata has no {field} column")
     return metadata
 
 def read_tree(tree_file):
-        if tree_file.endswith('.gz'):
-            return treeswift.read_tree(gzip.open(tree_file,"rt").read(), schema="newick")
-        else:
-            return treeswift.read_tree(open(tree_file,"rt").read(), schema="newick")
-
+        return treeswift.read_tree(tree_file, schema="newick")
 def get_datetime(x):
         try:
             return datetime.datetime.strptime(x, '%Y-%m-%d')
@@ -50,3 +46,31 @@ def get_target_dates(tree, lookup, reference_point):
                 diff = (date - lookup[reference_point]).days
                 terminal_targets[terminal.label] = diff
         return terminal_targets
+
+
+def get_initial_branch_lengths_and_name_all_nodes(tree):
+    initial_branch_lengths = {}
+    for i, node in tqdm.tqdm(enumerate(tree.traverse_postorder()),
+                                "finding initial branch_lengths"):
+        if not node.label:
+            name = f"internal_node_{i}"
+            node.label = name
+        if node.edge_length is None:
+            node.edge_length = 0
+        initial_branch_lengths[node.label] = node.edge_length
+    return initial_branch_lengths
+
+def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
+    # Here we define row col coordinates for 1s in a sparse matrix of mostly 0s
+    rows = []
+    cols = []
+    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Traversing tree for sparse matrix creation"):
+        if leaf.label in terminal_name_to_pos:
+            cur_node = leaf
+            rows.append(terminal_name_to_pos[leaf.label])
+            cols.append(name_to_pos[cur_node.label])
+            while cur_node.parent is not None:
+                rows.append(terminal_name_to_pos[leaf.label])
+                cols.append(name_to_pos[cur_node.parent.label])
+                cur_node = cur_node.parent
+    return rows,cols

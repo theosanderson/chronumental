@@ -13,6 +13,10 @@ def sp_matmul(A, B, shape):
     Returns:
         (N, K) dense matrix
     """
+    # In theory this performs an unnecessary multiplication by 1,
+    # (unnecessary for our purposes)
+    # but it probably gets removed in the XLA compilation step.
+    # Nevertheless we should ultimately refactor this.
     assert B.ndim == 2
     indexes, values = A
     rows, cols = indexes
