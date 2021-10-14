@@ -5,6 +5,8 @@ from Bio import Phylo
 import jax.numpy as jnp
 import numpy as np
 from . import helpers
+from . import input
+import dendropy
 
 import pandas as pd
 import tqdm
@@ -82,108 +84,86 @@ def main():
                         type=float,
                         help="Adam learning rate")
 
+    parser.add_argument('--dates_out',
+                        default=None,
+                        type=float,
+                        help="Output for date tsv (otherwise will use default)")
+
+    parser.add_argument('--tree_out',
+                        default=None,
+                        type=float,
+                        help="Output for tree (otherwise will use default)")
+
+
+
     args = parser.parse_args()
+
+    if args.dates_out is None:
+        args.dates_out = prepend_to_file_name(args.dates, "dates")+".tsv"
+
+    if args.tree_out is None:
+        args.tree_out = prepend_to_file_name(args.tree, "tree")
+
     substitutions_per_site_per_year = args.c
     genome_size = args.g
 
-   
-
-    print("Reading metadata")
-    metadata = pd.read_table(args.dates, low_memory=False)
-
-    if "date" not in metadata:
-        raise Exception("Metadata has no date column")
-
-    if "strain" not in metadata:
-        raise Exception("Metadata has no strain column")
-
-    def read_tree():
-        if args.tree.endswith('.gz'):
-            return Phylo.read(gzip.open(args.tree, "rt"), 'newick')
-        else:
-            return Phylo.read(args.tree, 'newick')
+    metadata = input.get_metadata(args.dates)
 
     print("Reading tree")
-    tree = read_tree()
+    tree = input.read_tree(args.tree)
 
-    def get_datetime(x):
-        try:
-            return datetime.datetime.strptime(x, '%Y-%m-%d')
-        except ValueError:
-            return None
+    print("Processing dates")
+    input.process_dates(metadata)
 
-    print("Extracting dates from metadata")
-    metadata['processed_date'] = metadata['date'].apply(get_datetime)
-
-    full = metadata[~metadata['processed_date'].isnull()]
+    full = input.get_complete_dates(metadata)
     lookup = dict(zip(full['strain'], full['processed_date']))
 
     # Get oldest date in full, and corresponding strain:
-    oldest_date = full['processed_date'].min()
-    reference_point = full[full['processed_date'] ==
-                           oldest_date]['strain'].values[0]
+    oldest_date, reference_point = input.get_oldest(full)
 
     print(f"Using {reference_point} as an arbitrary reference point")
     lookup[reference_point] = oldest_date
 
-    def get_target_dates():
-        terminal_targets = {}
-        for terminal in tqdm.tqdm(tree.root.get_terminals(),
-                                  "Creating target date array"):
-            
-            terminal.name = terminal.name.replace("'", "")
-            if terminal.name in lookup:
-                date = lookup[terminal.name]
-                diff = (date - lookup[reference_point]).days
-                terminal_targets[terminal.name] = diff
-        return terminal_targets
 
-    target_dates = get_target_dates()
-    terminal_names = target_dates.keys()
+
+    target_dates = input.get_target_dates(tree, lookup, reference_point)
+    terminal_names = sorted(target_dates.keys())
     
     terminal_target_dates_array = jnp.asarray(
         [float(target_dates[x]) for x in terminal_names])
+
     print(f"Found {len(terminal_names)} terminals")
+
     terminal_name_to_pos = {x: i for i, x in enumerate(terminal_names)}
 
-    def assign_paths(tree):
-        for node in tqdm.tqdm(tree.get_nonterminals(),
-                              "Finding paths in the tree"):
-            for clade in node.clades:
-                if node == tree.root:
-                    clade.path = [node]
-                else:
-                    clade.path = node.path + [
-                        node,
-                    ]
 
-    assign_paths(tree)
-
+    import tqdm
     initial_branch_lengths = {}
-    for i, node in tqdm.tqdm(enumerate(tree.root.find_clades()),
-                             "finding initial branch_lengths"):
-        if node.name == "":
-            node.name = f"internal_node_{i}"
-        if node.branch_length is None:
-            node.branch_length = 0
-        initial_branch_lengths[node.name] = node.branch_length
-    names_init = initial_branch_lengths.keys()
-    branch_distances_array = np.array(
+    for i, node in tqdm.tqdm(enumerate(tree.traverse_postorder()),
+                                "finding initial branch_lengths"):
+        if not node.label:
+            name = f"internal_node_{i}"
+            node.label = name
+        if node.edge_length is None:
+            node.edge_length = 0
+        initial_branch_lengths[node.label] = node.edge_length
+    names_init = sorted(initial_branch_lengths.keys())
+    branch_distances_array = jnp.array(
         [initial_branch_lengths[x] for x in names_init])
     name_to_pos = {x: i for i, x in enumerate(names_init)}
 
     # Here we define row col coordinates for 1s in a sparse matrix of mostly 0s
     rows = []
     cols = []
-
-    for i, node in tqdm.tqdm(enumerate(tree.root.get_terminals()),
-                             "Creating sparse matrix of edge contributions"):
-        if node.name in terminal_name_to_pos:
-            for item in node.path + [
-                    node,
-            ]:
-                rows.append(terminal_name_to_pos[node.name])
-                cols.append(name_to_pos[item.name])
+    for leaf in tqdm.tqdm(tree.traverse_leaves()):
+        if leaf.label in terminal_name_to_pos:
+            cur_node = leaf
+            rows.append(terminal_name_to_pos[leaf.label])
+            cols.append(name_to_pos[cur_node.label])
+            while cur_node.parent is not None:
+                rows.append(terminal_name_to_pos[leaf.label])
+                cols.append(name_to_pos[cur_node.parent.label])
+                cur_node = cur_node.parent
 
     rows = jnp.asarray(rows)
     print("Rows array created")
@@ -280,12 +260,12 @@ def main():
             node_name = node.name
         node.branch_length = branch_length_lookup[node_name]
     
-    output_tree = prepend_to_file_name(args.tree,"timetree_")
+ 
 
-    if args.tree.endswith(".gz"):
-        output_handle = gzip.open(output_tree, "wt")
+    if args.tree_out.endswith(".gz"):
+        output_handle = gzip.open(args.tree_out, "wt")
     else:
-        output_handle = open(output_tree, "w")
+        output_handle = open(args.tree_out, "w")
     Phylo.write(tree2, output_handle, "newick")
 
     new_dates_absolute = [lookup[reference_point] + datetime.timedelta(days=x) for x in new_dates.tolist()]
@@ -293,8 +273,8 @@ def main():
     output_meta = pd.DataFrame({'strain': terminal_names,
                                 'date': new_dates_absolute})
 
-    output_meta_file = prepend_to_file_name(args.tree,"timetree_meta_")
-    output_meta.to_csv(f"{output_meta_file}.tsv", sep="\t", index=False)
+    
+    output_meta.to_csv(args.dates_out, sep="\t", index=False)
 
 if __name__ == "__main__":
     main()
