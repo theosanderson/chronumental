@@ -6,14 +6,14 @@ from numpyro.infer.autoguide import AutoDelta
 from . import helpers
 
 class FixedClock(object):
-    def __init__(self, rows, cols, branch_distances_array, clock_rate, vb ,vd, terminal_target_dates_array):
+    def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array):
         self.rows = rows
         self.cols = cols
         self.branch_distances_array = branch_distances_array
         self.clock_rate = clock_rate
         self.terminal_target_dates_array = terminal_target_dates_array
-        self.vb = vb
-        self.vd = vd
+        self.variance_branch_length = variance_branch_length
+        self.variance_dates = variance_dates
 
         self.initial_time = 365 * (
         branch_distances_array 
@@ -37,7 +37,7 @@ class FixedClock(object):
             "latent_time_length",
             dist.TruncatedNormal(low=0,
                                  loc=self.initial_time,
-                                 scale=self.vb,
+                                 scale=self.variance_branch_length,
                                  validate_args=True))
 
         mutation_rate = numpyro.sample(
@@ -57,7 +57,7 @@ class FixedClock(object):
         final_dates = numpyro.sample(
             f"final_dates",
             dist.Normal(calced_dates,
-                        self.vd * jnp.ones(calced_dates.shape[0])),
+                        self.variance_dates * jnp.ones(calced_dates.shape[0])),
             obs=self.terminal_target_dates_array)
 
     def get_branch_times(self , params):

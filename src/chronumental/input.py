@@ -36,21 +36,25 @@ def get_oldest(full):
     return oldest_date, reference_point
 
 def get_target_dates(tree, lookup, reference_point):
-        terminal_targets = {}
-        for terminal in tqdm.tqdm(tree.traverse_leaves(),
-                                  "Creating target date array"):
-            
-            terminal.label = terminal.label.replace("'", "")
-            if terminal.label in lookup:
-                date = lookup[terminal.label]
-                diff = (date - lookup[reference_point]).days
-                terminal_targets[terminal.label] = diff
-        return terminal_targets
+    """
+    Returns a list of dictionary mapping names to integer dates being targeted.
+    Dates are relative to the date of the reference point, which forms an arbitary origin.
+    """
+    terminal_targets = {}
+    for terminal in tqdm.tqdm(tree.traverse_leaves(),
+                                "Creating target date array"):
+        
+        terminal.label = terminal.label.replace("'", "")
+        if terminal.label in lookup:
+            date = lookup[terminal.label]
+            diff = (date - lookup[reference_point]).days
+            terminal_targets[terminal.label] = diff
+    return terminal_targets
 
 
 def get_initial_branch_lengths_and_name_all_nodes(tree):
     initial_branch_lengths = {}
-    for i, node in tqdm.tqdm(enumerate(tree.traverse_postorder()),
+    for i, node in tqdm.tqdm(enumerate(tree.traverse_preorder()),
                                 "finding initial branch_lengths"):
         if not node.label:
             name = f"internal_node_{i}"

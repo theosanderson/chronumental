@@ -58,17 +58,17 @@ def main():
         type=float)
 
     parser.add_argument(
-        '-vd',
+        '-variance_dates',
         default=0.3,
         type=float,
         help=
         "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
     )
 
-    parser.add_argument('-vb',
+    parser.add_argument('-variance_branch_length',
                         default=1,
                         type=float,
-                        help="Scale factor for branch length distribution")
+                        help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
 
     parser.add_argument('--steps',
                         default=1000,
@@ -100,10 +100,10 @@ def main():
     args = parser.parse_args()
 
     if args.dates_out is None:
-        args.dates_out = prepend_to_file_name(args.dates, "dates")+".tsv"
+        args.dates_out = prepend_to_file_name(args.dates, "chronumental_dates")+".tsv"
 
     if args.tree_out is None:
-        args.tree_out = prepend_to_file_name(args.tree, "tree")
+        args.tree_out = prepend_to_file_name(args.tree, "chronumental_timetree")
 
     metadata = input.get_metadata(args.dates)
 
@@ -150,7 +150,7 @@ def main():
 
     print(branch_distances_array)
 
-    my_model = models.FixedClock(rows, cols, branch_distances_array, args.clock, args.vb ,args.vd, terminal_target_dates_array)
+    my_model = models.FixedClock(rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
@@ -175,15 +175,19 @@ def main():
             length_cor = np.corrcoef(
                 branch_distances_array,
                 times)[0, 1]  # This correlation should be relatively high
-            print(step, loss, date_cor, date_error, max_date_error, length_cor,
-                  svi.get_params(state)['latent_mutation_rate_auto_loc'])
+            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.4f}\tMean date error:{date_error:10.4f}\tMax date error:{max_date_error:10.4f}\tLength correlation:{length_cor:10.4f}\tInferred mutation rate:{svi.get_params(state)['latent_mutation_rate_auto_loc']:10.4f}")
 
     tree2 = input.read_tree(args.tree)
 
     branch_length_lookup = dict(
         zip(names_init,
-            svi.get_params(state)['latent_time_length_auto_loc'].tolist()))
-    for i, node in enumerate(tree2.traverse_postorder()):
+            my_model.get_branch_times(svi.get_params(state)).tolist()))
+    
+    total_lengths_in_time = {}
+
+    total_lengths= dict()
+
+    for i, node in enumerate(tree2.traverse_preorder()):
         if not node.label:
             node_name = f"internal_node_{i}"
             if args.name_all_nodes:
@@ -191,15 +195,24 @@ def main():
         else:
             node_name = node.label.replace("'", "")
         node.branch_length = branch_length_lookup[node_name]
+        if not node.parent:
+            total_lengths[node] = node.branch_length
+        else:
+            total_lengths[node] = node.branch_length + total_lengths[node.parent]
+
+        if node.label:
+            total_lengths_in_time[node.label.replace("'","")] = total_lengths[node]
     
- 
+    
+
     tree2.write_tree_newick(args.tree_out)
     print(f"Wrote tree to {args.tree_out}")
 
-    new_dates_absolute = [lookup[reference_point] + datetime.timedelta(days=x) for x in new_dates.tolist()]
-    
-    output_meta = pd.DataFrame({'strain': terminal_names,
-                                'predicted_date': new_dates_absolute})
+    origin_date = lookup[reference_point]
+    output_dates = {name: origin_date + datetime.timedelta(days=x) for name,x in total_lengths_in_time.items()}
+
+    names, values = zip(*output_dates.items())
+    output_meta = pd.DataFrame({"strain": names, "predicted_date": values})
 
     
     output_meta.to_csv(args.dates_out, sep="\t", index=False)
