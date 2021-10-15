@@ -82,12 +82,12 @@ def main():
 
     parser.add_argument('--dates_out',
                         default=None,
-                        type=float,
+                        type=str,
                         help="Output for date tsv (otherwise will use default)")
 
     parser.add_argument('--tree_out',
                         default=None,
-                        type=float,
+                        type=str,
                         help="Output for tree (otherwise will use default)")
     
     parser.add_argument('--name_all_nodes',
