@@ -58,14 +58,14 @@ def main():
         type=float)
 
     parser.add_argument(
-        '-variance_dates',
+        '--variance_dates',
         default=0.3,
         type=float,
         help=
         "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
     )
 
-    parser.add_argument('-variance_branch_length',
+    parser.add_argument('--variance_branch_length',
                         default=1,
                         type=float,
                         help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
