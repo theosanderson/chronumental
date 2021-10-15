@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from numpyro.infer.autoguide import AutoDelta
 from . import helpers
 
-class FixedClock(object):
+class DeltaGuideWithStrictLearntClock(object):
     def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array,terminal_target_errors_array, expected_min_days_between_transmissions):
         self.rows = rows
         self.cols = cols
@@ -19,10 +19,6 @@ class FixedClock(object):
         self.initial_time = 365 * (
         branch_distances_array 
     ) / clock_rate + expected_min_days_between_transmissions  # We add to this prior because tranmsmission after zero days is relatively unlikely
-
-    
-        
-
 
 
     def calc_dates(self,branch_lengths_array):
@@ -82,3 +78,6 @@ class FixedClock(object):
     def get_mutation_rate(self , params):
         return params['mutation_rate_mu']
  
+
+
+models = {"DeltaGuideWithStrictLearntClock": DeltaGuideWithStrictLearntClock}

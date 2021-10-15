@@ -27,7 +27,7 @@ def get_datetime_and_error(x):
                 try:
                     return [datetime.datetime.strptime(x, '%Y') +datetime.timedelta(days=365//2),365]
                 except ValueError:
-                    if x != "" or x=="?":
+                    if x != "" and x!="?":
                         print(f"Warning: could not parse date {x}, it will not feature in calculation.")
                     return [None,None]
 

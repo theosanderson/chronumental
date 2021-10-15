@@ -105,6 +105,10 @@ def main():
                         type=bool,
                         help="Should we only use full dates?")
 
+    parser.add_argument('--model',
+                        default="DeltaGuideWithStrictLearntClock",
+                        type=str,
+                        help="Model type to use")
 
 
     args = parser.parse_args()
@@ -167,7 +171,7 @@ def main():
     cols = jnp.asarray(cols)
     print("Cols array created")
 
-    my_model = models.FixedClock(rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions)
+    my_model = models.models[args.model](rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
