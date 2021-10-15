@@ -134,9 +134,9 @@ def main():
  
 
     # Get oldest date in full, and corresponding strain:
-    reference_point = input.get_oldest(full)
+    reference_point, ref_point_distance = input.get_oldest(full, tree)
 
-    print(f"Using {reference_point} as an arbitrary reference point")
+    print(f"Using {reference_point}, with date: {lookup[reference_point]} and distance {ref_point_distance} as an arbitrary reference point")
     #lookup[reference_point] = oldest_date_and_error
 
 
@@ -171,7 +171,7 @@ def main():
     cols = jnp.asarray(cols)
     print("Cols array created")
 
-    my_model = models.models[args.model](rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions)
+    my_model = models.models[args.model](rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions, ref_point_distance)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
@@ -183,7 +183,7 @@ def main():
         if step % 10 == 0 or step==num_steps-1 :
             params = svi.get_params(state)
             times = my_model.get_branch_times(params)
-            new_dates = my_model.calc_dates(times)
+            new_dates = my_model.calc_dates(times) + params['root_date']
             date_cor = np.corrcoef(
                 terminal_target_dates_array,
                 new_dates)[0, 1]  # This correlation should be very high
@@ -196,7 +196,7 @@ def main():
             length_cor = np.corrcoef(
                 branch_distances_array,
                 times)[0, 1]  # This correlation should be relatively high
-            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.2f}\tMean date error:{date_error:10.1f}\tMax date error:{max_date_error:10.4f} \t Length correlation:{length_cor:10.4f}\tInferred mutation rate:{my_model.get_mutation_rate(params):10.4f}")
+            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.2f}\tMean date error:{date_error:10.1f}\tMax date error:{max_date_error:10.4f} \t Length correlation:{length_cor:10.4f}\tInferred mutation rate:{my_model.get_mutation_rate(params):10.4f}\tRoot date:{params['root_date']}")
 
     tree2 = input.read_tree(args.tree)
 

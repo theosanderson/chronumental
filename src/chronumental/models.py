@@ -6,7 +6,7 @@ from numpyro.infer.autoguide import AutoDelta
 from . import helpers
 
 class DeltaGuideWithStrictLearntClock(object):
-    def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array,terminal_target_errors_array, expected_min_days_between_transmissions):
+    def __init__(self, rows, cols, branch_distances_array, clock_rate, variance_branch_length ,variance_dates, terminal_target_dates_array,terminal_target_errors_array, expected_min_days_between_transmissions,ref_point_distance):
         self.rows = rows
         self.cols = cols
         self.branch_distances_array = branch_distances_array
@@ -15,6 +15,7 @@ class DeltaGuideWithStrictLearntClock(object):
         self.terminal_target_errors_array = terminal_target_errors_array
         self.variance_branch_length = variance_branch_length
         self.variance_dates = variance_dates
+        self.ref_point_distance = ref_point_distance
 
         self.initial_time = 365 * (
         branch_distances_array 
@@ -29,6 +30,9 @@ class DeltaGuideWithStrictLearntClock(object):
         return calc_dates
     
     def model(self):
+        root_date = numpyro.sample(
+            "root_date",
+            dist.Normal( loc=0.0,  scale=1000.0))
 
         branch_times = numpyro.sample(
             "latent_time_length",
@@ -49,7 +53,7 @@ class DeltaGuideWithStrictLearntClock(object):
             dist.Poisson(self.clock_rate * branch_times / 365),
             obs=self.branch_distances_array)
 
-        calced_dates = self.calc_dates(branch_times)
+        calced_dates = self.calc_dates(branch_times) + root_date
 
         final_dates = numpyro.sample(
             f"final_dates",
@@ -59,6 +63,7 @@ class DeltaGuideWithStrictLearntClock(object):
 
     
     def guide(self):
+        root_date = numpyro.param("root_date", -365*self.ref_point_distance/self.clock_rate) #TODO : ideally this should start at the distance length / mutation rate
         time_length_mu = numpyro.param("time_length_mu", self.initial_time,
                                 constraint=dist.constraints.positive)
         time_length_sigma = numpyro.param("time_length_sigma", jnp.ones(self.initial_time.shape)*1e-3,

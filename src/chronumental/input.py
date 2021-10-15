@@ -16,7 +16,11 @@ def get_metadata(metadata_file):
     return metadata
 
 def read_tree(tree_file):
-        return treeswift.read_tree(tree_file, schema="newick")
+        tree = treeswift.read_tree(tree_file, schema="newick")
+        for node in tree.traverse_preorder():
+            if node.label:
+                node.label = node.label.replace("'", "")
+        return tree
 def get_datetime_and_error(x):
         try:
             return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
@@ -43,12 +47,16 @@ def get_present_dates(metadata, only_use_full_dates):
     else:
         return metadata[~metadata['processed_date'].isnull()]
 
-def get_oldest(full):
-    oldest_date = full['processed_date'].min()
-    the_oldest = full[full['processed_date'] ==
+def get_oldest(full, tree):
+    leaf_to_node = tree.label_to_node(selection="leaves")
+    filtered = full[full['strain'].isin(leaf_to_node.keys())]
+    oldest_date = filtered['processed_date'].min()
+    the_oldest = filtered[filtered['processed_date'] ==
                            oldest_date]
     reference_point = the_oldest['strain'].values[0]
-    return reference_point
+
+    distance = tree.distance_between(tree.root, leaf_to_node[reference_point])
+    return reference_point, distance
 
 def get_target_dates(tree, lookup, reference_point):
     """
