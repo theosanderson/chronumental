@@ -183,7 +183,7 @@ def main():
         if step % 10 == 0 or step==num_steps-1 :
             params = svi.get_params(state)
             times = my_model.get_branch_times(params)
-            new_dates = my_model.calc_dates(times) + params['root_date']
+            new_dates = my_model.calc_dates(times, params['root_date'])
             date_cor = np.corrcoef(
                 terminal_target_dates_array,
                 new_dates)[0, 1]  # This correlation should be very high
@@ -231,7 +231,7 @@ def main():
     print(f"Wrote tree to {args.tree_out}")
 
     origin_date = lookup[reference_point][0]
-    output_dates = {name: origin_date + datetime.timedelta(days=x) for name,x in total_lengths_in_time.items()}
+    output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'])) for name,x in total_lengths_in_time.items()}
 
     names, values = zip(*output_dates.items())
     output_meta = pd.DataFrame({"strain": names, "predicted_date": values})

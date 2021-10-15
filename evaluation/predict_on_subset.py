@@ -4,7 +4,7 @@ import sys
 
 argument=float(sys.argv[1])
 
-metadata = pd.read_table('public-2021-09-15.metadata.tsv.gz').sample(frac=argument)
+metadata = pd.read_table('public-2021-09-15.metadata.tsv.gz').drop_duplicates().sample(frac=argument)
 filename = f"metadata_subset_{argument}.tsv"
 metadata.to_csv(filename, sep='\t', index=False)
 import os

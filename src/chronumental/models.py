@@ -22,12 +22,12 @@ class DeltaGuideWithStrictLearntClock(object):
     ) / clock_rate + expected_min_days_between_transmissions  # We add to this prior because tranmsmission after zero days is relatively unlikely
 
 
-    def calc_dates(self,branch_lengths_array):
+    def calc_dates(self,branch_lengths_array, root_date):
         A = ((self.rows, self.cols), jnp.ones_like(self.cols))
         B = branch_lengths_array.reshape((branch_lengths_array.shape[0], 1))
         calc_dates = helpers.sp_matmul(A, B,
                                        self.terminal_target_dates_array.shape[0]).squeeze()
-        return calc_dates
+        return calc_dates + root_date
     
     def model(self):
         root_date = numpyro.sample(
@@ -53,7 +53,7 @@ class DeltaGuideWithStrictLearntClock(object):
             dist.Poisson(self.clock_rate * branch_times / 365),
             obs=self.branch_distances_array)
 
-        calced_dates = self.calc_dates(branch_times) + root_date
+        calced_dates = self.calc_dates(branch_times, root_date)
 
         final_dates = numpyro.sample(
             f"final_dates",
