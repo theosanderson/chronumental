@@ -136,7 +136,7 @@ def main():
     # Get oldest date in full, and corresponding strain:
     reference_point, ref_point_distance = input.get_oldest(full, tree)
 
-    print(f"Using {reference_point}, with date: {lookup[reference_point]} and distance {ref_point_distance} as an arbitrary reference point")
+    print(f"Using {reference_point}, with date: {lookup[reference_point][0]} and distance from root {ref_point_distance} as an arbitrary reference point")
     #lookup[reference_point] = oldest_date_and_error
 
 
@@ -231,7 +231,7 @@ def main():
     print(f"Wrote tree to {args.tree_out}")
 
     origin_date = lookup[reference_point][0]
-    output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'])) for name,x in total_lengths_in_time.items()}
+    output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'].tolist())) for name,x in total_lengths_in_time.items()}
 
     names, values = zip(*output_dates.items())
     output_meta = pd.DataFrame({"strain": names, "predicted_date": values})
