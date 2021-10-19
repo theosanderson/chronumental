@@ -9,8 +9,15 @@ Chronumental is in an early stage of development and has not been benchmarked or
 
 ### Installation
 
+#### Method 1: Using pipx (recommended)
 ```
-pip3 install chronumental
+pip install --local pipx
+pipx install  chronumental
+```
+
+#### Method 2: In your python environment
+```
+pip install chronumental
 ```
 
 ### Usage
