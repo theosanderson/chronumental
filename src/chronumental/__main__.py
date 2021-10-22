@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from . import helpers
 from . import input
-
+import collections
 
 import pandas as pd
 import tqdm
@@ -17,6 +17,8 @@ import numpyro.optim as optim
 from numpyro.infer import SVI, Trace_ELBO
 from numpyro.infer.autoguide import AutoDelta
 from . import models
+from scipy import stats
+
 try:
     from . import _version
     version = _version.version
@@ -53,7 +55,7 @@ def main():
     parser.add_argument(
         '--clock',
         help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree.',
-        default=30e3*1e-3,
+        default=None,
         type=float)
 
     parser.add_argument(
@@ -90,8 +92,7 @@ def main():
                         help="Output for tree (otherwise will use default)")
     
     parser.add_argument('--name_all_nodes',
-                        default=False,
-                        type=bool,
+                        action='store_true',
                         help="Should we name all nodes in the output?")
 
     parser.add_argument('--expected_min_between_transmissions',
@@ -100,8 +101,7 @@ def main():
                         help="For forming the prior, an expected minimum time between transmissions")
 
     parser.add_argument('--only_use_full_dates',
-                        default=False,
-                        type=bool,
+                        action='store_true',
                         help="Should we only use full dates?")
 
     parser.add_argument('--model',
@@ -110,7 +110,20 @@ def main():
                         help="Model type to use")
 
 
+    parser.add_argument('--use_wandb',  
+                        action='store_true',
+                        help="Should we use wandb?")    
+
+
     args = parser.parse_args()
+
+    if args.use_wandb:
+        try:
+            import wandb
+        except ImportError:
+            raise ValueError("Wandb not installed. Please install it with `pip install wandb`")
+        wandb.init(project="chronumental")
+        wandb.config.update(args)
 
     if args.dates_out is None:
         args.dates_out = prepend_to_file_name(args.dates, "chronumental_dates")+".tsv"
@@ -161,6 +174,7 @@ def main():
     names_init = sorted(initial_branch_lengths.keys())
     branch_distances_array = jnp.array(
         [initial_branch_lengths[x] for x in names_init])
+    
     name_to_pos = {x: i for i, x in enumerate(names_init)}
 
     rows, cols = input.get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos)
@@ -170,7 +184,26 @@ def main():
     cols = jnp.asarray(cols)
     print("Cols array created")
 
-    my_model = models.models[args.model](rows, cols, branch_distances_array, args.clock, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions, ref_point_distance)
+
+    if args.clock:
+        print(f"Using clock rate {args.clock}")
+        clock_rate = args.clock
+    else:
+        root_to_tip = helpers.do_branch_matmul(rows,cols,branch_distances_array,final_size=len(terminal_names))
+
+        print("No clock rate specified, performing root-to-tip regression to estimate starting value")
+        # Do basic regression of root to tip vs target dates with numpy:
+        x = terminal_target_dates_array
+        y= root_to_tip
+        slope_per_day, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        slope_per_year = slope_per_day * 365
+
+        print(f"Root to tip regression: got rate of: {slope_per_year}")
+        clock_rate = slope_per_year
+
+
+
+    my_model = models.models[args.model](rows, cols, branch_distances_array, clock_rate, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions, ref_point_distance)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
@@ -180,22 +213,36 @@ def main():
     for step in range(num_steps):
         state, loss = svi.update(state)
         if step % 10 == 0 or step==num_steps-1 :
+            results = collections.OrderedDict()
+            results['step'] = step
+            results['loss'] = loss
             params = svi.get_params(state)
             times = my_model.get_branch_times(params)
             new_dates = my_model.calc_dates(times, params['root_date'])
-            date_cor = np.corrcoef(
+            results['date_cor'] = np.corrcoef(
                 terminal_target_dates_array,
-                new_dates)[0, 1]  # This correlation should be very high
-            date_error = np.mean(
+                new_dates)[0, 1]
+            results['date_error']  = np.mean(
                 np.abs(terminal_target_dates_array -
                        new_dates))  # Average date error should be small
-            max_date_error = np.max(
+         
+            results['max_date_error'] = np.max(
                 np.abs(terminal_target_dates_array - new_dates)
             )  # We know that there are some metadata errors, so there probably should be some big errors
-            length_cor = np.corrcoef(
+            results['length_cor'] = np.corrcoef(
                 branch_distances_array,
                 times)[0, 1]  # This correlation should be relatively high
-            print(f"Step:{step}\tLoss:{loss}\tDate correlation:{date_cor:10.2f}\tMean date error:{date_error:10.1f}\tMax date error:{max_date_error:10.4f} \t Length correlation:{length_cor:10.4f}\tInferred mutation rate:{my_model.get_mutation_rate(params):10.4f}\tRoot date:{params['root_date']}")
+            results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
+            results['root_date'] = params['root_date']
+
+            result_string = "\t".join([f"{name}:{value}" for name, value in results.items()])
+            print(result_string)
+            if args.use_wandb:
+                wandb.log(results)
+
+
+
+
 
     tree2 = input.read_tree(args.tree)
 
@@ -208,8 +255,10 @@ def main():
     total_lengths= dict()
 
     for i, node in enumerate(tree2.traverse_preorder()):
+        if node.label and node.label.replace(".", "").strip().isdigit():
+            node.label = None
         if not node.label:
-            node_name = f"internal_node_{i}"
+            node_name = helpers.get_unnnamed_node_label(i)
             if args.name_all_nodes:
                 node.label = node_name
         else:

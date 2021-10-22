@@ -23,10 +23,9 @@ class DeltaGuideWithStrictLearntClock(object):
 
 
     def calc_dates(self,branch_lengths_array, root_date):
-        A = ((self.rows, self.cols), jnp.ones_like(self.cols))
-        B = branch_lengths_array.reshape((branch_lengths_array.shape[0], 1))
-        calc_dates = helpers.sp_matmul(A, B,
-                                       self.terminal_target_dates_array.shape[0]).squeeze()
+
+        calc_dates = helpers.do_branch_matmul(self.rows, self.cols, branch_lengths_array= branch_lengths_array,
+                                       final_size = self.terminal_target_dates_array.shape[0])
         return calc_dates + root_date
     
     def model(self):

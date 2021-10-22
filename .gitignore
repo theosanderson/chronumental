@@ -11,3 +11,5 @@ src/chronumental.egg-info/top_level.txt
 src/chronumental/__pycache__/__init__.cpython-39.pyc
 src/chronumental/__pycache__/__main__.cpython-39.pyc
 src/chronumental/__pycache__/helpers.cpython-39.pyc
+src/wandb/**
+**.pyc

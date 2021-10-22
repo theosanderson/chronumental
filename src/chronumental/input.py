@@ -1,16 +1,60 @@
+from os import name
 import pandas as pd
 import gzip
 import datetime
 import tqdm
 import treeswift
+from . import helpers
+from datetime import datetime as dt
+
+def read_tabular_file(tabular_file,**kwargs):
+    # Handle gzipped files, and csv and tsv
+    if tabular_file.endswith(".gz"):
+        tabular_file = gzip.open(tabular_file)
+    else:
+        tabular_file = open(tabular_file)
+    if tabular_file.name.endswith(".csv"):
+        return pd.read_csv(tabular_file, **kwargs)
+    if tabular_file.name.endswith(".tsv"):
+        return pd.read_csv(tabular_file, sep="\t", **kwargs)
+    raise Exception(f"Tabular file {tabular_file} was expected to end in tsv or csv")
+
+def get_correct_column(columns, possible_values):
+    for column in columns:
+        if str(column).strip().lower() in possible_values:
+            return column
+    raise Exception(f"""Could not find a column with one of the following names: {possible_values}. Available were:
+    {columns}""")
+
+def fromYearFraction(yearFraction):
+    #check type is float
+    if not isinstance(yearFraction, float):
+        raise ValueError("Not a float")
+    year = int(yearFraction)
+    fraction = yearFraction - year
+    startOfThisYear = dt(year=year, month=1, day=1)
+    startOfNextYear = dt(year=year+1, month=1, day=1)
+    date = startOfThisYear + (fraction * ((startOfNextYear) - (startOfThisYear)))
+    return date
 
 def get_metadata(metadata_file):
-    fields = ['date', 'strain']
+    # get just the top row of the file
+    metadata = read_tabular_file(metadata_file, nrows=1)
+    # get the column names
+    metadata_columns = metadata.columns
+    name_column = get_correct_column(metadata_columns, possible_values=["strain", "name", "taxon"])
+    print(f"Using {name_column} as the name column. This must be the name of the taxa in the tree.")
+    
+    date_column = get_correct_column(metadata_columns, possible_values=["date"])
+    fields = [date_column, name_column]
+    print(f"Using {fields} as the fields to parse.")
 
     print("Reading metadata")
-    metadata = pd.read_table(metadata_file, low_memory=False, usecols=fields)
+    metadata = read_tabular_file(metadata_file, low_memory=False, usecols=fields).rename(columns={name_column: 'strain', date_column: 'date'})
 
-    for field in fields:
+
+
+    for field in ['date']:
         if field not in metadata:
             raise Exception(f"Metadata has no {field} column")
     return metadata
@@ -24,7 +68,14 @@ def read_tree(tree_file):
 def get_datetime_and_error(x):
         try:
             return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
+        except TypeError:
+            return [fromYearFraction(x),1]
         except ValueError:
+            try:
+                return fromYearFraction(x)
+            except ValueError:
+                pass
+
             try:
                 return [datetime.datetime.strptime(x, '%Y-%m') + datetime.timedelta(days=30//2),30]
             except ValueError:
@@ -81,11 +132,16 @@ def get_initial_branch_lengths_and_name_all_nodes(tree):
     initial_branch_lengths = {}
     for i, node in tqdm.tqdm(enumerate(tree.traverse_preorder()),
                                 "finding initial branch_lengths"):
+        # If node label looks like a float, then it's something else, so we set to None:
+        if node.label and node.label.replace(".", "").strip().isdigit():
+            node.label = None
         if not node.label:
-            name = f"internal_node_{i}"
+            name = helpers.get_unnnamed_node_label(i)
             node.label = name
         if node.edge_length is None:
             node.edge_length = 0
+
+  
         initial_branch_lengths[node.label] = node.edge_length
     return initial_branch_lengths
 
