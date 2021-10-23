@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 
 def get_unnnamed_node_label(i):
-    name = f"NODE_{i+1:07d}"
+    name = f"NODE_{i:07d}"
     return name
 
 # Credit: Guillem Cucurull http://gcucurull.github.io/deep-learning/2020/06/03/jax-sparse-matrix-multiplication/

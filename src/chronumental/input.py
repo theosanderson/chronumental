@@ -4,15 +4,14 @@ import gzip
 import datetime
 import tqdm
 import treeswift
+import xopen
+import lzma
 from . import helpers
 from datetime import datetime as dt
 
-def read_tabular_file(tabular_file,**kwargs):
+def read_tabular_file(tabular_file_name,**kwargs):
     # Handle gzipped files, and csv and tsv
-    if tabular_file.endswith(".gz"):
-        tabular_file = gzip.open(tabular_file)
-    else:
-        tabular_file = open(tabular_file)
+    tabular_file = xopen.xopen(tabular_file_name, "r")
     if tabular_file.name.endswith(".csv"):
         return pd.read_csv(tabular_file, **kwargs)
     if tabular_file.name.endswith(".tsv"):
@@ -60,7 +59,19 @@ def get_metadata(metadata_file):
     return metadata
 
 def read_tree(tree_file):
-        tree = treeswift.read_tree(tree_file, schema="newick")
+        extension = tree_file.replace(".gz", "").replace(".bz2", "").split(".")[-1]
+        if extension == "nex" or extension == "nexus":
+            trees = treeswift.read_tree_nexus(tree_file)
+            keys = list(trees.keys())
+            print(f"Using tree {keys[0]} from Nexus file")
+            tree = trees[keys[0]]
+        elif extension == "nwk" or extension == "newick":
+            tree = treeswift.read_tree_newick(tree_file)
+        else:
+            print("Assuming tree file is newick (change extension for nexus)")
+            tree = treeswift.read_tree_newick(tree_file)
+        #raise ValueError(tree)
+
         for node in tree.traverse_preorder():
             if node.label:
                 node.label = node.label.replace("'", "")
