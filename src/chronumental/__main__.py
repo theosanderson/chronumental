@@ -109,6 +109,13 @@ def main():
                         type=str,
                         help="Model type to use")
 
+    parser.add_argument('output_unit',
+                        default="days",
+                        type=str,
+                        help="Unit for the output distance",
+                        choices=["days", "years"])
+                        
+
 
     parser.add_argument('--use_wandb',  
                         action='store_true',
@@ -263,11 +270,11 @@ def main():
                 node.label = node_name
         else:
             node_name = node.label.replace("'", "")
-        node.branch_length = branch_length_lookup[node_name]
+        node.branch_length = branch_length_lookup[node_name] / (365 if args.output_unit=="years" else 1)
         if not node.parent:
-            total_lengths[node] = node.branch_length
+            total_lengths[node] = branch_length_lookup[node_name]
         else:
-            total_lengths[node] = node.branch_length + total_lengths[node.parent]
+            total_lengths[node] = branch_length_lookup[node_name] + total_lengths[node.parent]
 
         if node.label:
             total_lengths_in_time[node.label.replace("'","")] = total_lengths[node]
