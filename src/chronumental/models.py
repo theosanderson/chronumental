@@ -6,13 +6,13 @@ from numpyro.infer.autoguide import AutoDelta
 from . import helpers
 
 class DeltaGuideWithStrictLearntClock(object):
-    def __init__(self, rows, cols, branch_distances_array, terminal_target_dates_array, model_configuration):
+    def __init__(self, rows, cols, branch_distances_array, terminal_target_dates_array, terminal_target_errors_array, model_configuration):
         self.rows = rows
         self.cols = cols
         self.branch_distances_array = branch_distances_array
         self.clock_rate = model_configuration["clock_rate"]
         self.terminal_target_dates_array = terminal_target_dates_array
-        self.terminal_target_errors_array = model_configuration["terminal_target_errors_array"]
+        self.terminal_target_errors_array = terminal_target_errors_array
         self.variance_branch_length = model_configuration["variance_branch_length"]
         self.variance_dates = model_configuration['variance_dates']
         self.ref_point_distance = model_configuration['ref_point_distance']
