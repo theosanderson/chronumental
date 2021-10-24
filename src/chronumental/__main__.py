@@ -84,19 +84,19 @@ parser.add_argument('--use_wandb',
                     action='store_true',
                     help="Should we use wandb?")    
 
-parser.add_argument('--no_variance_on_clock_rate',
+parser.add_argument('--variance_on_clock_rate',
                     action='store_true',
-                    help=("Will stop the clock rate being "
-                    "drawn from a random distribution."))
+                    help=("Will cause the clock rate to be "
+                    "drawn from a random distribution with a learnt variance."))
 
 parser.add_argument('--enforce_exact_clock',
                     action='store_true',
                     help=("Will cause the clock rate to be exactly"
                     "fixed at the value specified in clock, rather than learnt"))
 
-parser.add_argument('--disable_gpu',
+parser.add_argument('--use_gpu',
                     action='store_true',
-                    help=("Will disable GPU usage"))
+                    help=("Will attempt to use the GPU"))
 
 parser.add_argument('--wandb_project_name',
                     default="chronumental",
@@ -110,7 +110,7 @@ parser.add_argument('--wandb_project_name',
 args = parser.parse_args()
 
 import os
-if args.disable_gpu:
+if not args.use_gpu:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import datetime
 
@@ -140,6 +140,15 @@ except ImportError:
     version = "dev"
 
 print(f"Chronumental {version}")
+
+from jax.lib import xla_bridge
+platform = xla_bridge.get_backend().platform
+print(f"Platform: {platform}")
+
+if args.use_gpu and platform == "cpu":
+    print("GPU requested but was not available")
+    print("This probably reflects your CUDA/jaxlib installation")
+    args.use_gpu = False
 
 
 def prepend_to_file_name(full_path, to_prepend):
@@ -248,7 +257,7 @@ def main():
         "variance_dates":args.variance_dates, 
         "expected_min_between_transmissions": args.expected_min_between_transmissions,
         "enforce_exact_clock": args.enforce_exact_clock,
-        "no_variance_on_clock_rate": args.no_variance_on_clock_rate
+        "variance_on_clock_rate": args.variance_on_clock_rate
     }
 
     my_model = models.models[args.model]( rows=rows, cols=cols, branch_distances_array=branch_distances_array, terminal_target_dates_array=terminal_target_dates_array, terminal_target_errors_array=terminal_target_errors_array,ref_point_distance=ref_point_distance, model_configuration=model_configuration)

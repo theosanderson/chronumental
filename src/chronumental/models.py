@@ -18,7 +18,7 @@ class DeltaGuideWithStrictLearntClock(object):
         self.variance_dates = model_configuration['variance_dates']
         self.ref_point_distance = ref_point_distance
         self.enforce_exact_clock = model_configuration['enforce_exact_clock']
-        self.no_variance_on_clock_rate = model_configuration['no_variance_on_clock_rate']
+        self.variance_on_clock_rate = model_configuration['variance_on_clock_rate']
 
         self.initial_time = jnp.maximum(365 * (
         branch_distances_array 
@@ -79,7 +79,7 @@ class DeltaGuideWithStrictLearntClock(object):
         
         branch_times = numpyro.sample("latent_time_length",dist.Delta(time_length_mu))
 
-        if self.no_variance_on_clock_rate:
+        if not self.variance_on_clock_rate:
             mutation_rate = numpyro.sample("latent_mutation_rate",dist.Delta(mutation_rate_mu))
         else:
             mutation_rate = numpyro.sample(f"latent_mutation_rate", dist.TruncatedNormal(0,mutation_rate_mu,mutation_rate_sigma ))
