@@ -1,3 +1,117 @@
+
+import argparse
+parser = argparse.ArgumentParser(
+    description=
+    'Convert a distance tree into time tree with distances in days.')
+parser.add_argument(
+    '--tree',
+    help=
+    'an input newick tree, potentially gzipped, with distances as raw number of mutations',
+    required=True)
+
+parser.add_argument(
+    '--dates',
+    help=
+    'A metadata file with columns strain and date (in 2020-01-02 format)',
+    required=True)
+
+parser.add_argument(
+    '--clock',
+    help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree.',
+    default=None,
+    type=float)
+
+parser.add_argument(
+    '--variance_dates',
+    default=0.3,
+    type=float,
+    help=
+    "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
+)
+
+parser.add_argument('--variance_branch_length',
+                    default=1,
+                    type=float,
+                    help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
+
+parser.add_argument('--steps',
+                    default=1000,
+                    type=int,
+                    help="Number of steps to use for the SVI")
+
+parser.add_argument('--lr',
+                    default=0.1,
+                    type=float,
+                    help="Adam learning rate")
+
+parser.add_argument('--dates_out',
+                    default=None,
+                    type=str,
+                    help="Output for date tsv (otherwise will use default)")
+
+parser.add_argument('--tree_out',
+                    default=None,
+                    type=str,
+                    help="Output for tree (otherwise will use default)")
+
+parser.add_argument('--name_all_nodes',
+                    action='store_true',
+                    help="Should we name all nodes in the output?")
+
+parser.add_argument('--expected_min_between_transmissions',
+                    default=3,
+                    type=int,
+                    help="For forming the prior, an expected minimum time between transmissions in days")
+
+parser.add_argument('--only_use_full_dates',
+                    action='store_true',
+                    help="Should we only use full dates?")
+
+parser.add_argument('--model',
+                    default="DeltaGuideWithStrictLearntClock",
+                    type=str,
+                    help="Model type to use")
+
+parser.add_argument('--output_unit',
+                    type=str,
+                    help="Unit for the output distance",
+                    choices=["days", "years"],
+                    default="days")
+                    
+
+
+parser.add_argument('--use_wandb',  
+                    action='store_true',
+                    help="Should we use wandb?")    
+
+parser.add_argument('--no_variance_on_clock_rate',
+                    action='store_true',
+                    help=("Will stop the clock rate being "
+                    "drawn from a random distribution."))
+
+parser.add_argument('--enforce_exact_clock',
+                    action='store_true',
+                    help=("Will cause the clock rate to be exactly"
+                    "fixed at the value specified in clock, rather than learnt"))
+
+parser.add_argument('--disable_gpu',
+                    action='store_true',
+                    help=("Will disable GPU usage"))
+
+parser.add_argument('--wandb_project_name',
+                    default="chronumental",
+                    type=str,
+                    help="Wandb project name")
+
+
+
+
+
+args = parser.parse_args()
+
+import os
+if args.disable_gpu:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import datetime
 
 import pandas as pd
@@ -24,7 +138,9 @@ try:
     version = _version.version
 except ImportError:
     version = "dev"
-import argparse
+
+print(f"Chronumental {version}")
+
 
 def prepend_to_file_name(full_path, to_prepend):
     if "/" in full_path:
@@ -35,112 +151,14 @@ def prepend_to_file_name(full_path, to_prepend):
 
 
 def main():
-    print(f"Chronumental {version}")
-
-    parser = argparse.ArgumentParser(
-        description=
-        'Convert a distance tree into time tree with distances in days.')
-    parser.add_argument(
-        '--tree',
-        help=
-        'an input newick tree, potentially gzipped, with distances as raw number of mutations',
-        required=True)
-
-    parser.add_argument(
-        '--dates',
-        help=
-        'A metadata file with columns strain and date (in 2020-01-02 format)',
-        required=True)
-
-    parser.add_argument(
-        '--clock',
-        help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree.',
-        default=None,
-        type=float)
-
-    parser.add_argument(
-        '--variance_dates',
-        default=0.3,
-        type=float,
-        help=
-        "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
-    )
-
-    parser.add_argument('--variance_branch_length',
-                        default=1,
-                        type=float,
-                        help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
-
-    parser.add_argument('--steps',
-                        default=1000,
-                        type=int,
-                        help="Number of steps to use for the SVI")
-
-    parser.add_argument('--lr',
-                        default=0.1,
-                        type=float,
-                        help="Adam learning rate")
-
-    parser.add_argument('--dates_out',
-                        default=None,
-                        type=str,
-                        help="Output for date tsv (otherwise will use default)")
-
-    parser.add_argument('--tree_out',
-                        default=None,
-                        type=str,
-                        help="Output for tree (otherwise will use default)")
     
-    parser.add_argument('--name_all_nodes',
-                        action='store_true',
-                        help="Should we name all nodes in the output?")
-
-    parser.add_argument('--expected_min_between_transmissions',
-                        default=3,
-                        type=int,
-                        help="For forming the prior, an expected minimum time between transmissions in days")
-
-    parser.add_argument('--only_use_full_dates',
-                        action='store_true',
-                        help="Should we only use full dates?")
-
-    parser.add_argument('--model',
-                        default="DeltaGuideWithStrictLearntClock",
-                        type=str,
-                        help="Model type to use")
-
-    parser.add_argument('--output_unit',
-                        type=str,
-                        help="Unit for the output distance",
-                        choices=["days", "years"],
-                        default="days")
-                        
-
-
-    parser.add_argument('--use_wandb',  
-                        action='store_true',
-                        help="Should we use wandb?")    
-
-    parser.add_argument('--no_variance_on_clock_rate',
-                        action='store_true',
-                        help=("Will stop the clock rate being "
-                        "drawn from a random distribution."))
-
-    parser.add_argument('--enforce_exact_clock',
-                        action='store_true',
-                        help=("Will cause the clock rate to be exactly"
-                        "fixed at the value specified in clock, rather than learnt"))
-
-
-
-    args = parser.parse_args()
 
     if args.use_wandb:
         try:
             import wandb
         except ImportError:
             raise ValueError("Wandb not installed. Please install it with `pip install wandb`")
-        wandb.init(project="chronumental")
+        wandb.init(project=args.wandb_project_name)
         wandb.config.update(args)
 
     if args.enforce_exact_clock and args.clock is None:
