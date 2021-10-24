@@ -12,9 +12,12 @@ from datetime import datetime as dt
 def read_tabular_file(tabular_file_name,**kwargs):
     # Handle gzipped files, and csv and tsv
     tabular_file = xopen.xopen(tabular_file_name, "r")
-    if tabular_file.name.endswith(".csv"):
+    print(f"Reading {tabular_file_name}")
+
+    stripped_name = tabular_file_name.replace(".gz", "").replace(".bz2", "").replace(".xz", "").replace(".lzma", "")
+    if stripped_name.endswith(".csv"):
         return pd.read_csv(tabular_file, **kwargs)
-    if tabular_file.name.endswith(".tsv"):
+    if stripped_name.endswith(".tsv"):
         return pd.read_csv(tabular_file, sep="\t", **kwargs)
     raise Exception(f"Tabular file {tabular_file} was expected to end in tsv or csv")
 

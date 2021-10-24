@@ -109,11 +109,11 @@ def main():
                         type=str,
                         help="Model type to use")
 
-    parser.add_argument('output_unit',
-                        default="days",
+    parser.add_argument('--output_unit',
                         type=str,
                         help="Unit for the output distance",
-                        choices=["days", "years"])
+                        choices=["days", "years"],
+                        default="days")
                         
 
 
