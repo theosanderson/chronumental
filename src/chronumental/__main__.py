@@ -121,6 +121,17 @@ def main():
                         action='store_true',
                         help="Should we use wandb?")    
 
+    parser.add_argument('--no_variance_on_clock_rate',
+                        action='store_true',
+                        help=("Will stop the clock rate being "
+                        "drawn from a random distribution."))
+
+    parser.add_argument('--enforce_exact_clock',
+                        action='store_true',
+                        help=("Will cause the clock rate to be exactly"
+                        "fixed at the value specified in clock, rather than learnt"))
+
+
 
     args = parser.parse_args()
 
@@ -131,6 +142,9 @@ def main():
             raise ValueError("Wandb not installed. Please install it with `pip install wandb`")
         wandb.init(project="chronumental")
         wandb.config.update(args)
+
+    if args.enforce_exact_clock and args.clock is None:
+        raise ValueError("If you want to enforce the exact clock rate, you must specify it with --clock")
 
     if args.dates_out is None:
         args.dates_out = prepend_to_file_name(args.dates, "chronumental_dates")+".tsv"
@@ -210,7 +224,16 @@ def main():
 
 
 
-    my_model = models.models[args.model](rows, cols, branch_distances_array, clock_rate, args.variance_branch_length ,args.variance_dates, terminal_target_dates_array, terminal_target_errors_array,  args.expected_min_between_transmissions, ref_point_distance)
+    model_configuration = {
+        "clock_rate":clock_rate, 
+        "variance_branch_length":args.variance_branch_length ,
+        "variance_dates":args.variance_dates, 
+        "expected_min_between_transmissions": args.expected_min_between_transmissions,
+        "enforce_exact_clock": args.enforce_exact_clock,
+        "no_variance_on_clock_rate": args.no_variance_on_clock_rate
+    }
+
+    my_model = models.models[args.model]( rows=rows, cols=cols, branch_distances_array=branch_distances_array, terminal_target_dates_array=terminal_target_dates_array, terminal_target_errors_array=terminal_target_errors_array,ref_point_distance=ref_point_distance, model_configuration=model_configuration)
 
     print("Performing SVI:")
     svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
