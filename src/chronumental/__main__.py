@@ -4,7 +4,7 @@ import pandas as pd
 import jax.numpy as jnp
 import numpy as np
 from . import helpers
-from . import input
+from . import input_mod
 import collections
 
 import pandas as pd
@@ -98,7 +98,7 @@ def main():
     parser.add_argument('--expected_min_between_transmissions',
                         default=3,
                         type=int,
-                        help="For forming the prior, an expected minimum time between transmissions")
+                        help="For forming the prior, an expected minimum time between transmissions in days")
 
     parser.add_argument('--only_use_full_dates',
                         action='store_true',
@@ -152,29 +152,29 @@ def main():
     if args.tree_out is None:
         args.tree_out = prepend_to_file_name(args.tree, "chronumental_timetree")
 
-    metadata = input.get_metadata(args.dates)
+    metadata = input_mod.get_metadata(args.dates)
 
     print("Reading tree")
-    tree = input.read_tree(args.tree)
+    tree = input_mod.read_tree(args.tree)
 
     print("Processing dates")
-    input.process_dates(metadata)
+    input_mod.process_dates(metadata)
 
-    full = input.get_present_dates(metadata, only_use_full_dates =args.only_use_full_dates)
+    full = input_mod.get_present_dates(metadata, only_use_full_dates =args.only_use_full_dates)
     lookup = dict(zip(full['strain'], 
     
     zip(full['processed_date'], full['processed_date_error'])))
  
 
     # Get oldest date in full, and corresponding strain:
-    reference_point, ref_point_distance = input.get_oldest(full, tree)
+    reference_point, ref_point_distance = input_mod.get_oldest(full, tree)
 
     print(f"Using {reference_point}, with date: {lookup[reference_point][0]} and distance from root {ref_point_distance} as an arbitrary reference point")
     #lookup[reference_point] = oldest_date_and_error
 
 
 
-    target_dates, target_errors = input.get_target_dates(tree, lookup, reference_point)
+    target_dates, target_errors = input_mod.get_target_dates(tree, lookup, reference_point)
     terminal_names = sorted(target_dates.keys())
     
     terminal_target_dates_array = jnp.asarray(
@@ -191,14 +191,14 @@ def main():
     terminal_name_to_pos = {x: i for i, x in enumerate(terminal_names)}
 
 
-    initial_branch_lengths = input.get_initial_branch_lengths_and_name_all_nodes(tree)
+    initial_branch_lengths = input_mod.get_initial_branch_lengths_and_name_all_nodes(tree)
     names_init = sorted(initial_branch_lengths.keys())
     branch_distances_array = jnp.array(
         [initial_branch_lengths[x] for x in names_init])
     
     name_to_pos = {x: i for i, x in enumerate(names_init)}
 
-    rows, cols = input.get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos)
+    rows, cols = input_mod.get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos)
 
     rows = jnp.asarray(rows)
     print("Rows array created")
@@ -240,83 +240,94 @@ def main():
     state = svi.init(jax.random.PRNGKey(0))
 
     num_steps = args.steps
+    was_interrupted = False
     for step in range(num_steps):
-        state, loss = svi.update(state)
-        if step % 10 == 0 or step==num_steps-1 :
-            results = collections.OrderedDict()
-            results['step'] = step
-            results['loss'] = loss
-            params = svi.get_params(state)
-            times = my_model.get_branch_times(params)
-            new_dates = my_model.calc_dates(times, params['root_date'])
-            results['date_cor'] = np.corrcoef(
-                terminal_target_dates_array,
-                new_dates)[0, 1]
-            results['date_error']  = np.mean(
-                np.abs(terminal_target_dates_array -
-                       new_dates))  # Average date error should be small
-         
-            results['max_date_error'] = np.max(
-                np.abs(terminal_target_dates_array - new_dates)
-            )  # We know that there are some metadata errors, so there probably should be some big errors
-            results['length_cor'] = np.corrcoef(
-                branch_distances_array,
-                times)[0, 1]  # This correlation should be relatively high
-            results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
-            results['root_date'] = params['root_date']
 
-            result_string = "\t".join([f"{name}:{float(value):5f}" for name, value in results.items()])
-            print(result_string)
-            if args.use_wandb:
-                wandb.log(results)
+        try:
+
+            state, loss = svi.update(state)
+            if step % 10 == 0 or step==num_steps-1 :
+                results = collections.OrderedDict()
+                results['step'] = step
+                results['loss'] = loss
+                params = svi.get_params(state)
+                times = my_model.get_branch_times(params)
+                new_dates = my_model.calc_dates(times, params['root_date'])
+                results['date_cor'] = np.corrcoef(
+                    terminal_target_dates_array,
+                    new_dates)[0, 1]
+                results['date_error']  = np.mean(
+                    np.abs(terminal_target_dates_array -
+                            new_dates))  # Average date error should be small
+                
+                results['max_date_error'] = np.max(
+                    np.abs(terminal_target_dates_array - new_dates)
+                )  # We know that there are some metadata errors, so there probably should be some big errors
+                results['length_cor'] = np.corrcoef(
+                    branch_distances_array,
+                    times)[0, 1]  # This correlation should be relatively high
+                results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
+                results['root_date'] = params['root_date']
+
+                result_string = "\t".join([f"{name}:{value:5f}" if type(value) is float else f"{name}:{value}"  for name, value in results.items()])
+                print(result_string)
+                if args.use_wandb:
+                    wandb.log(results)
+        except KeyboardInterrupt:
+            print(f"Interrupting model fitting after {step} steps.")
+            was_interrupted = True
+            break
 
 
 
+    to_save = ""
+    if was_interrupted:
+        while to_save.strip().lower() not in ['y', 'n']:
+            to_save = input("Do you want to save the results? [y/n]")
+    if to_save.strip().lower() == "y":
+        tree2 = input_mod.read_tree(args.tree)
 
+        branch_length_lookup = dict(
+            zip(names_init,
+                my_model.get_branch_times(svi.get_params(state)).tolist()))
+        
+        total_lengths_in_time = {}
 
-    tree2 = input.read_tree(args.tree)
+        total_lengths= dict()
 
-    branch_length_lookup = dict(
-        zip(names_init,
-            my_model.get_branch_times(svi.get_params(state)).tolist()))
-    
-    total_lengths_in_time = {}
+        for i, node in enumerate(tree2.traverse_preorder()):
+            if node.label and node.label.replace(".", "").strip().isdigit():
+                node.label = None
+            if not node.label:
+                node_name = helpers.get_unnnamed_node_label(i)
+                if args.name_all_nodes:
+                    node.label = node_name
+            else:
+                node_name = node.label.replace("'", "")
+            node.branch_length = branch_length_lookup[node_name] / (365 if args.output_unit=="years" else 1)
+            if not node.parent:
+                total_lengths[node] = branch_length_lookup[node_name]
+            else:
+                total_lengths[node] = branch_length_lookup[node_name] + total_lengths[node.parent]
 
-    total_lengths= dict()
+            if node.label:
+                total_lengths_in_time[node.label.replace("'","")] = total_lengths[node]
+        
+        
 
-    for i, node in enumerate(tree2.traverse_preorder()):
-        if node.label and node.label.replace(".", "").strip().isdigit():
-            node.label = None
-        if not node.label:
-            node_name = helpers.get_unnnamed_node_label(i)
-            if args.name_all_nodes:
-                node.label = node_name
-        else:
-            node_name = node.label.replace("'", "")
-        node.branch_length = branch_length_lookup[node_name] / (365 if args.output_unit=="years" else 1)
-        if not node.parent:
-            total_lengths[node] = branch_length_lookup[node_name]
-        else:
-            total_lengths[node] = branch_length_lookup[node_name] + total_lengths[node.parent]
+        tree2.write_tree_newick(args.tree_out)
+        print("")
+        print(f"Wrote tree to {args.tree_out}")
 
-        if node.label:
-            total_lengths_in_time[node.label.replace("'","")] = total_lengths[node]
-    
-    
+        origin_date = lookup[reference_point][0]
+        output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'].tolist())) for name,x in total_lengths_in_time.items()}
 
-    tree2.write_tree_newick(args.tree_out)
-    print("")
-    print(f"Wrote tree to {args.tree_out}")
+        names, values = zip(*output_dates.items())
+        output_meta = pd.DataFrame({"strain": names, "predicted_date": values})
 
-    origin_date = lookup[reference_point][0]
-    output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'].tolist())) for name,x in total_lengths_in_time.items()}
-
-    names, values = zip(*output_dates.items())
-    output_meta = pd.DataFrame({"strain": names, "predicted_date": values})
-
-    
-    output_meta.to_csv(args.dates_out, sep="\t", index=False)
-    print(f"Wrote predicted dates to {args.dates_out}")
+        
+        output_meta.to_csv(args.dates_out, sep="\t", index=False)
+        print(f"Wrote predicted dates to {args.dates_out}")
 
 if __name__ == "__main__":
     main()

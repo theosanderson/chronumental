@@ -3,10 +3,11 @@ import numpyro
 import numpyro.distributions as dist
 import jax.numpy as jnp
 from numpyro.infer.autoguide import AutoDelta
+import numpy as onp
 from . import helpers
 
 class DeltaGuideWithStrictLearntClock(object):
-    def __init__(self, rows, cols, branch_distances_array, terminal_target_dates_array, terminal_target_errors_array, model_configuration):
+    def __init__(self, rows, cols, branch_distances_array, terminal_target_dates_array, terminal_target_errors_array, model_configuration, ref_point_distance):
         self.rows = rows
         self.cols = cols
         self.branch_distances_array = branch_distances_array
@@ -15,14 +16,13 @@ class DeltaGuideWithStrictLearntClock(object):
         self.terminal_target_errors_array = terminal_target_errors_array
         self.variance_branch_length = model_configuration["variance_branch_length"]
         self.variance_dates = model_configuration['variance_dates']
-        self.ref_point_distance = model_configuration['ref_point_distance']
+        self.ref_point_distance = ref_point_distance
         self.enforce_exact_clock = model_configuration['enforce_exact_clock']
         self.no_variance_on_clock_rate = model_configuration['no_variance_on_clock_rate']
 
-        self.initial_time = 365 * (
+        self.initial_time = jnp.maximum(365 * (
         branch_distances_array 
-    ) / model_configuration['clock_rate'] + model_configuration['expected_min_between_transmissions']  # We add to this prior because tranmsmission after zero days is relatively unlikely
-
+    ) / model_configuration['clock_rate'] , model_configuration['expected_min_between_transmissions'] )
 
     def calc_dates(self,branch_lengths_array, root_date):
 
