@@ -311,6 +311,8 @@ def main():
     if was_interrupted:
         while to_save.strip().lower() not in ['y', 'n']:
             to_save = input("Do you want to save the results? [y/n]")
+    else:
+        to_save = "y"
     if to_save.strip().lower() == "y":
         tree2 = input_mod.read_tree(args.tree)
 
