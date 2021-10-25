@@ -304,6 +304,7 @@ def main():
             print(f"Interrupting model fitting after {step} steps.")
             was_interrupted = True
             break
+    print("Fit completed. Extracting parameters.")
 
 
 
@@ -319,6 +320,7 @@ def main():
         branch_length_lookup = dict(
             zip(names_init,
                 my_model.get_branch_times(svi.get_params(state)).tolist()))
+
         
         total_lengths_in_time = {}
 
@@ -333,7 +335,7 @@ def main():
                     node.label = node_name
             else:
                 node_name = node.label.replace("'", "")
-            node.branch_length = branch_length_lookup[node_name] / (365 if args.output_unit=="years" else 1)
+            node.edge_length = branch_length_lookup[node_name] / (365 if args.output_unit=="years" else 1)
             if not node.parent:
                 total_lengths[node] = branch_length_lookup[node_name]
             else:
@@ -343,7 +345,7 @@ def main():
                 total_lengths_in_time[node.label.replace("'","")] = total_lengths[node]
         
         
-
+        print("Writing tree to file")
         tree2.write_tree_newick(args.tree_out)
         print("")
         print(f"Wrote tree to {args.tree_out}")
