@@ -62,7 +62,7 @@ optional arguments:
   --variance_on_clock_rate
                         Will cause the clock rate to be drawn from a random distribution with a learnt variance.
   --enforce_exact_clock
-                        Will cause the clock rate to be exactlyfixed at the value specified in clock, rather than learnt
+                        Will cause the clock rate to be exactly fixed at the value specified in clock, rather than learnt
   --use_gpu             Will attempt to use the GPU. You will need a version of CUDA installed to suit Numpyro.
   --use_wandb           This flag will trigger the use of Weights and Biases to log the fitting process. This must be installed with 'pip install wandb'
   --wandb_project_name WANDB_PROJECT_NAME
