@@ -1,5 +1,7 @@
 ## Chronumental
-[**Chron**&#8203;ologies from mon&#8203;**umental** phylogenetic trees]
+***Chron**&#8203;ologies from mon&#8203;**umental** phylogenetic trees*
+
+<hr>
 
 Chronumental is a tool for creating a "time-tree" (where distance on the tree represents time) from a phylogenetic distance-tree (where distance on the tree reflects a number of genetic substitutions).
 
