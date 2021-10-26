@@ -6,18 +6,29 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--tree',
     help=
-    'an input newick tree, potentially gzipped, with distances as raw number of mutations',
+    'an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance',
     required=True)
 
 parser.add_argument(
     '--dates',
     help=
-    'A metadata file with columns strain and date (in 2020-01-02 format)',
+    'A metadata file with columns strain and date (in "2020-01-02" format, or less precisely, "2021-01", "2021")',
     required=True)
+
+parser.add_argument('--dates_out',
+                    default=None,
+                    type=str,
+                    help="Output for date tsv (otherwise will use default)")
+
+parser.add_argument('--tree_out',
+                    default=None,
+                    type=str,
+                    help="Output for tree (otherwise will use default)")
+
 
 parser.add_argument(
     '--clock',
-    help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree.',
+    help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree. If not given we will attempt to estimate this by RTT. This is only used as a starting point, unless you supply --enforce_exact_clock.',
     default=None,
     type=float)
 
@@ -44,19 +55,11 @@ parser.add_argument('--lr',
                     type=float,
                     help="Adam learning rate")
 
-parser.add_argument('--dates_out',
-                    default=None,
-                    type=str,
-                    help="Output for date tsv (otherwise will use default)")
 
-parser.add_argument('--tree_out',
-                    default=None,
-                    type=str,
-                    help="Output for tree (otherwise will use default)")
 
 parser.add_argument('--name_all_nodes',
                     action='store_true',
-                    help="Should we name all nodes in the output?")
+                    help="Should we name all nodes in the output tree?")
 
 parser.add_argument('--expected_min_between_transmissions',
                     default=3,
@@ -74,15 +77,12 @@ parser.add_argument('--model',
 
 parser.add_argument('--output_unit',
                     type=str,
-                    help="Unit for the output distance",
+                    help="Unit for the output branch lengths on the time tree.",
                     choices=["days", "years"],
                     default="days")
                     
 
 
-parser.add_argument('--use_wandb',  
-                    action='store_true',
-                    help="Should we use wandb?")    
 
 parser.add_argument('--variance_on_clock_rate',
                     action='store_true',
@@ -96,7 +96,12 @@ parser.add_argument('--enforce_exact_clock',
 
 parser.add_argument('--use_gpu',
                     action='store_true',
-                    help=("Will attempt to use the GPU"))
+                    help=("Will attempt to use the GPU. You will need a version of CUDA installed to suit Numpyro."))
+
+parser.add_argument('--use_wandb',  
+                    action='store_true',
+                    help="This flag will trigger the use of Weights and Biases to log the fitting process. This must be installed with 'pip install wandb'")    
+
 
 parser.add_argument('--wandb_project_name',
                     default="chronumental",
