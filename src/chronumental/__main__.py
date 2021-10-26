@@ -263,7 +263,7 @@ def main():
     my_model = models.models[args.model]( rows=rows, cols=cols, branch_distances_array=branch_distances_array, terminal_target_dates_array=terminal_target_dates_array, terminal_target_errors_array=terminal_target_errors_array,ref_point_distance=ref_point_distance, model_configuration=model_configuration)
 
     print("Performing SVI:")
-    svi = SVI(my_model.model, my_model.guide, optim.Adam(args.lr), Trace_ELBO())
+    svi = SVI(my_model.model, my_model.guide, optim.ClippedAdam( args.lr), Trace_ELBO())
     state = svi.init(jax.random.PRNGKey(0))
 
     num_steps = args.steps
