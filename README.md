@@ -3,13 +3,11 @@
 
 Chronumental is a tool for creating a "time-tree" (where distance on the tree represents time) from a phylogenetic distance-tree (where distance on the tree reflects a number of genetic substitutions).
 
-What sets chronumental apart from most other tools is that it scales to extremely large trees, which can contain millions of nodes. Chronumental uses JAX, which means it can optimise the tree rapidly if you have a GPU available, and also performs well on a CPU.
-
-Chronumental is in an early stage of development and has not been benchmarked or subject to peer-review.
+What sets Chronumental apart from most other tools is that it scales to extremely large trees, which can contain millions of nodes. Chronumental uses JAX, which means it can optimise the tree rapidly if you have a GPU available, and also performs well on a CPU.
 
 ### Installation
 
-#### Method 1: Using pipx (recommended)
+#### Method 1: Using pipx (recommended for basic use - installs in it's own isolated environment)
 ```
 pip install --local pipx
 pipx install  chronumental
