@@ -9,7 +9,7 @@ What sets Chronumental apart from most other tools is that it scales to extremel
 
 ### Installation
 
-#### Method 1: Using pipx (recommended for basic use - installs in it's own isolated environment)
+#### Method 1: Using pipx (recommended for basic use - installs in its own isolated environment)
 ```
 pip install --local pipx
 pipx install  chronumental
