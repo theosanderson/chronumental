@@ -286,6 +286,9 @@ def main():
                 results['date_error']  = np.mean(
                     np.abs(terminal_target_dates_array -
                             new_dates))  # Average date error should be small
+                results['date_error_med']  = np.median(
+                    np.abs(terminal_target_dates_array -
+                            new_dates))  # Average date error should be small
                 
                 results['max_date_error'] = np.max(
                     np.abs(terminal_target_dates_array - new_dates)
@@ -296,7 +299,7 @@ def main():
                 results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
                 results['root_date'] = params['root_date']
 
-                result_string = "\t".join([f"{name}:{value:5f}" if type(value) is float else f"{name}:{value}"  for name, value in results.items()])
+                result_string = "\t".join([f"{name}:{value:3f}" if type(value) is float else f"{name}:{value}"  for name, value in results.items()])
                 print(result_string)
                 if args.use_wandb:
                     wandb.log(results)
