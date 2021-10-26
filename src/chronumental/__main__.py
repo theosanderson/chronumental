@@ -103,6 +103,10 @@ parser.add_argument('--wandb_project_name',
                     type=str,
                     help="Wandb project name")
 
+parser.add_argument('--clipped_adam',
+                action='store_true',
+                help=("Will use the clipped version of Adam"))
+
 
 
 
@@ -263,7 +267,8 @@ def main():
     my_model = models.models[args.model]( rows=rows, cols=cols, branch_distances_array=branch_distances_array, terminal_target_dates_array=terminal_target_dates_array, terminal_target_errors_array=terminal_target_errors_array,ref_point_distance=ref_point_distance, model_configuration=model_configuration)
 
     print("Performing SVI:")
-    svi = SVI(my_model.model, my_model.guide, optim.ClippedAdam( args.lr), Trace_ELBO())
+    optimiser = optim.ClippedAdam( args.lr) if args.clipped_adam else optim.Adam(args.lr)
+    svi = SVI(my_model.model, my_model.guide,optimiser , Trace_ELBO())
     state = svi.init(jax.random.PRNGKey(0))
 
     num_steps = args.steps
