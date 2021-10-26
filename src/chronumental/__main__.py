@@ -92,7 +92,7 @@ parser.add_argument('--variance_on_clock_rate',
 parser.add_argument('--enforce_exact_clock',
                     action='store_true',
                     help=("Will cause the clock rate to be exactly"
-                    "fixed at the value specified in clock, rather than learnt"))
+                    " fixed at the value specified in clock, rather than learnt"))
 
 parser.add_argument('--use_gpu',
                     action='store_true',
