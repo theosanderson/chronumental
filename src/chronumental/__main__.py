@@ -68,7 +68,7 @@ parser.add_argument('--expected_min_between_transmissions',
 
 parser.add_argument('--only_use_full_dates',
                     action='store_true',
-                    help="Should we only use full dates?")
+                    help="Only use full dates, given to the precision of a day")
 
 parser.add_argument('--model',
                     default="DeltaGuideWithStrictLearntClock",
@@ -205,9 +205,7 @@ def main():
     # Get oldest date in full, and corresponding strain:
     reference_point, ref_point_distance = input_mod.get_oldest(full, tree)
 
-    print(f"Using {reference_point}, with date: {lookup[reference_point][0]} and distance from root {ref_point_distance} as an arbitrary reference point")
-    #lookup[reference_point] = oldest_date_and_error
-
+    print(f"Using {reference_point}, with date: {lookup[reference_point][0]} and distance from root {ref_point_distance} as an arbitrary reference point")  
 
 
     target_dates, target_errors = input_mod.get_target_dates(tree, lookup, reference_point)
@@ -309,7 +307,7 @@ def main():
                 results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
                 results['root_date'] = params['root_date']
 
-                result_string = "\t".join([f"{name}:{value:3f}" if type(value) is float else f"{name}:{value}"  for name, value in results.items()])
+                result_string = "\t".join([f"{name}:{value:.4f}" if type(value) is float else f"{name}:{value}"  for name, value in results.items()])
                 print(result_string)
                 if args.use_wandb:
                     wandb.log(results)
