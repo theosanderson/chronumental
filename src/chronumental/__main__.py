@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--tree',
     help=
-    'an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance',
+    'an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance in integer number of mutations',
     required=True)
 
 parser.add_argument(
