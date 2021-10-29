@@ -38,7 +38,7 @@ Convert a distance tree into time tree with distances in days.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --tree TREE           an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance
+  --tree TREE           an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance in integer number of mutations
   --dates DATES         A metadata file with columns strain and date (in "2020-01-02" format, or less precisely, "2021-01", "2021")
   --dates_out DATES_OUT
                         Output for date tsv (otherwise will use default)
