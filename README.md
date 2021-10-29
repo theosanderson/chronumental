@@ -71,4 +71,4 @@ optional arguments:
 ```
 
 ### Similar tools
-[TreeTime](https://github.com/neherlab/treetime) is a more advanced tool for inferring time trees. If you have a dataset of e.g. <10,000 rather than millions of nodes you are definitely best off trying it.
+[TreeTime](https://github.com/neherlab/treetime) is a more advanced tool for inferring time trees. If you have a dataset of e.g. <10,000 rather than millions of nodes you are definitely best off trying it. The TreeTime README also links to other similar tools.
