@@ -25,6 +25,15 @@ parser.add_argument('--tree_out',
                     type=str,
                     help="Output for tree (otherwise will use default)")
 
+parser.add_argument('--always_use_final_params',
+                    action='store_true',
+                    help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
+
+parser.add_argument("--treat_mutation_units_as_normalised_to_genome_size",
+default=1
+,type=int,
+help="If your branch sizes, and mutation rate, are normalised to per-site values, then enter the genome size here.")
+
 
 parser.add_argument(
     '--clock',
@@ -228,7 +237,7 @@ def main():
     initial_branch_lengths = input_mod.get_initial_branch_lengths_and_name_all_nodes(tree)
     names_init = sorted(initial_branch_lengths.keys())
     branch_distances_array = jnp.array(
-        [initial_branch_lengths[x] for x in names_init])
+        [initial_branch_lengths[x] for x in names_init]) * args.treat_mutation_units_as_normalised_to_genome_size
     
     name_to_pos = {x: i for i, x in enumerate(names_init)}
 
@@ -242,7 +251,7 @@ def main():
 
     if args.clock:
         print(f"Using clock rate {args.clock}")
-        clock_rate = args.clock
+        clock_rate = args.clock * args.treat_mutation_units_as_normalised_to_genome_size
     else:
         root_to_tip = helpers.do_branch_matmul(rows,cols,branch_distances_array,final_size=len(terminal_names))
 
@@ -276,11 +285,16 @@ def main():
 
     num_steps = args.steps
     was_interrupted = False
+    lowest_loss = np.Inf
+    best_params = None
     for step in range(num_steps):
 
         try:
 
             state, loss = svi.update(state)
+            if loss < lowest_loss:
+                best_params = svi.get_params(state)
+                lowest_loss = loss
             if step % 10 == 0 or step==num_steps-1 :
                 results = collections.OrderedDict()
                 results['step'] = step
@@ -318,7 +332,8 @@ def main():
     print("Fit completed. Extracting parameters.")
 
 
-
+    if not args.always_use_final_params:
+        params = best_params
     to_save = ""
     if was_interrupted:
         while to_save.strip().lower() not in ['y', 'n']:
