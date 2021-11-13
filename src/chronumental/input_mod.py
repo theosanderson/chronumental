@@ -118,7 +118,11 @@ def get_oldest(full, tree):
     oldest_date = filtered['processed_date'].min()
     the_oldest = filtered[filtered['processed_date'] ==
                            oldest_date]
-    reference_point = the_oldest['strain'].values[0]
+    
+    try:
+        reference_point = the_oldest['strain'].values[0]
+    except IndexError:
+        raise ValueError("Could not find a reference point on the tree. This probably means that the names on your tree don't match the strain/name/taxon column of the dates file.")
 
     distance = tree.distance_between(tree.root, leaf_to_node[reference_point])
     return reference_point, distance
