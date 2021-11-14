@@ -138,12 +138,7 @@ import numpy as np
 from . import helpers
 from . import input_mod
 import collections
-
-import pandas as pd
-import tqdm
-import gzip
 import jax
-import numpyro
 import numpyro.distributions as dist
 import numpyro.optim as optim
 from numpyro.infer import SVI, Trace_ELBO
