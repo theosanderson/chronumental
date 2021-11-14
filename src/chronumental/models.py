@@ -4,6 +4,7 @@ import numpyro.distributions as dist
 import jax.numpy as jnp
 import numpy as onp
 from . import helpers
+import collections
 
 class ChronumentalModelBase(object):
     def __init__(self,**kwargs):
@@ -15,6 +16,29 @@ class ChronumentalModelBase(object):
         self.ref_point_distance = kwargs['ref_point_distance']
 
         self.set_initial_time()
+
+    def get_logging_results(self,params):
+        results = collections.OrderedDict()
+        times = self.get_branch_times(params)
+        new_dates = self.calc_dates(times, params['root_date'])
+        results['date_cor'] = onp.corrcoef(
+            self.terminal_target_dates_array,
+            new_dates)[0, 1]
+        results['date_error']  = onp.mean(
+            onp.abs(self.terminal_target_dates_array -
+                    new_dates))  # Average date error should be small
+        results['date_error_med']  = onp.median(
+            onp.abs(self.terminal_target_dates_array -
+                    new_dates))  # Average date error should be small
+        
+        results['max_date_error'] = onp.max(
+            onp.abs(self.terminal_target_dates_array - new_dates)
+        )  # We know that there are some metadata errors, so there probably should be some big errors
+        results['length_cor'] = onp.corrcoef(
+            self.branch_distances_array,
+            times)[0, 1]  # This correlation should be relatively high
+        results['root_date'] = params['root_date']
+        return results
 
         
 
@@ -30,6 +54,10 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
 
         super().__init__(**kwargs)
        
+    def get_logging_results(self, params):
+        results =  super().get_logging_results(params)
+        results['mutation_rate'] = self.get_mutation_rate(params)
+        return results
 
     def set_initial_time(self):
         self.initial_time = jnp.maximum(365 * (

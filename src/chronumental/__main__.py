@@ -291,30 +291,12 @@ def main():
                 best_params = svi.get_params(state)
                 lowest_loss = loss
             if step % 10 == 0 or step==num_steps-1 :
-                results = collections.OrderedDict()
+                results = my_model.get_logging_results(svi.get_params(state))
                 results['step'] = step
                 results['loss'] = loss
-                params = svi.get_params(state)
-                times = my_model.get_branch_times(params)
-                new_dates = my_model.calc_dates(times, params['root_date'])
-                results['date_cor'] = np.corrcoef(
-                    terminal_target_dates_array,
-                    new_dates)[0, 1]
-                results['date_error']  = np.mean(
-                    np.abs(terminal_target_dates_array -
-                            new_dates))  # Average date error should be small
-                results['date_error_med']  = np.median(
-                    np.abs(terminal_target_dates_array -
-                            new_dates))  # Average date error should be small
-                
-                results['max_date_error'] = np.max(
-                    np.abs(terminal_target_dates_array - new_dates)
-                )  # We know that there are some metadata errors, so there probably should be some big errors
-                results['length_cor'] = np.corrcoef(
-                    branch_distances_array,
-                    times)[0, 1]  # This correlation should be relatively high
-                results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
-                results['root_date'] = params['root_date']
+                results.move_to_end('loss', last=False)
+                results.move_to_end('step', last=False)
+
 
                 result_string = "\t".join([f"{name}:{value:.4f}" if "." in str(value) else f"{name}:{value}"  for name, value in results.items()])
                 print(result_string)
