@@ -267,8 +267,8 @@ def main():
         print(f"Root to tip regression: got rate of: {slope_per_year}")
         clock_rate = slope_per_year
     
-    if clock_rate < 1 and not args.treat_mutations_as_normalised_to_genome_size:
-        raise ValueError("Clock rate is less than 1 mutation per year. This probably means you need to specify a genome_size with --treat_mutations_as_normalised_to_genome size. If you are sure that you do not, set that parameter to 1.0.")
+    if clock_rate < 1 and not args.treat_mutation_units_as_normalised_to_genome_size:
+        raise ValueError("Clock rate is less than 1 mutation per year. This probably means you need to specify a genome_size with --treat_mutation_units_as_normalised_to_genome_size size. If you are sure that you do not, set that parameter to 1.0.")
 
 
 
