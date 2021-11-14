@@ -131,7 +131,7 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
         if self.enforce_exact_clock:
             return self.clock_rate
         return params['mutation_rate_mu']
- 
+
 
 
 models = {"DeltaGuideWithStrictLearntClock": DeltaGuideWithStrictLearntClock}
