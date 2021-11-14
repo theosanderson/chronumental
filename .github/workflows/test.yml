@@ -1,6 +1,8 @@
 name: Testing
 
 on:
+  repository_dispatch:
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
