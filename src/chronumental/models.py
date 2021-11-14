@@ -133,5 +133,97 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
         return params['mutation_rate_mu']
 
 
+class AdditiveRelaxedClock(ChronumentalModelBase):
+    def __init__(self, **kwargs):
 
-models = {"DeltaGuideWithStrictLearntClock": DeltaGuideWithStrictLearntClock}
+        self.clock_rate = kwargs['model_configuration']["clock_rate"]
+        self.variance_branch_length = kwargs['model_configuration']["variance_branch_length"]
+        self.variance_dates = kwargs['model_configuration']['variance_dates']
+        self.expected_min_between_transmissions = kwargs['model_configuration']['expected_min_between_transmissions']
+
+        super().__init__(**kwargs)
+       
+    def get_logging_results(self, params):
+        results =  super().get_logging_results(params)
+        results['mutation_rate'] = self.get_mutation_rate(params)
+        results['concentration'] = params['concentration']
+        return results
+
+    def set_initial_time(self):
+        self.initial_time = jnp.maximum(365 * (
+        self.branch_distances_array 
+    ) / self.clock_rate ,self.expected_min_between_transmissions )
+
+    def calc_dates(self,branch_lengths_array, root_date):
+
+        calc_dates = helpers.do_branch_matmul(self.rows,        self.cols, branch_lengths_array= branch_lengths_array,
+                                       final_size = self.terminal_target_dates_array.shape[0])
+        return calc_dates + root_date
+    
+    def model(self):
+        root_date = numpyro.sample(
+            "root_date",
+            dist.Normal( loc=0.0,  scale=1000.0))
+
+        branch_times = numpyro.sample(
+            "latent_time_length",
+            dist.TruncatedNormal(low=0,
+                                 loc=self.initial_time,
+                                 scale=self.variance_branch_length,
+                                 validate_args=True))
+
+        mutation_rate = numpyro.sample(
+                f"latent_mutation_rate",
+                dist.TruncatedNormal(low=0,
+                                    loc=self.clock_rate,
+                                    scale=self.clock_rate,
+                                    validate_args=True))
+
+        concentration = numpyro.sample("latent_concentration",dist.Normal(loc=0,scale=100))
+
+        
+
+        branch_distances = numpyro.sample(
+            "branch_distances",
+            dist.NegativeBinomial2(mean=mutation_rate * branch_times / 365, concentration=concentration),
+            obs=self.branch_distances_array)
+
+        calced_dates = self.calc_dates(branch_times, root_date)
+
+        final_dates = numpyro.sample(
+            f"final_dates",
+            dist.Normal(calced_dates,
+                        self.variance_dates * self.terminal_target_errors_array),
+            obs=self.terminal_target_dates_array)
+
+    
+    def guide(self):
+        root_date = numpyro.param("root_date", -365*self.ref_point_distance/self.clock_rate) 
+
+        time_length_mu = numpyro.param("time_length_mu", self.initial_time,
+                                constraint=dist.constraints.positive)
+
+        mutation_rate_mu = numpyro.param("mutation_rate_mu", self.clock_rate,
+                                constraint=dist.constraints.positive)
+        mutation_rate_sigma = numpyro.param("mutation_rate_sigma", self.clock_rate,
+                                constraint=dist.constraints.positive)
+
+        concentration_param = numpyro.param("concentration", 5.0)
+
+        concentration = numpyro.sample("latent_concentration",dist.Delta(concentration_param))
+
+        
+        branch_times = numpyro.sample("latent_time_length",dist.Delta(time_length_mu))
+
+        mutation_rate = numpyro.sample("latent_mutation_rate",dist.Delta(mutation_rate_mu))
+       
+    def get_branch_times(self , params):
+        return params['time_length_mu']
+
+    def get_mutation_rate(self , params):
+
+        return params['mutation_rate_mu']
+ 
+
+
+models = {"DeltaGuideWithStrictLearntClock": DeltaGuideWithStrictLearntClock, "AdditiveRelaxedClock": AdditiveRelaxedClock}
