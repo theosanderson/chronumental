@@ -30,7 +30,7 @@ parser.add_argument('--always_use_final_params',
                     help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
 
 parser.add_argument("--treat_mutation_units_as_normalised_to_genome_size",
-default=1
+default=None
 ,type=int,
 help="If your branch sizes, and mutation rate, are normalised to per-site values, then enter the genome size here.")
 
@@ -138,12 +138,7 @@ import numpy as np
 from . import helpers
 from . import input_mod
 import collections
-
-import pandas as pd
-import tqdm
-import gzip
 import jax
-import numpyro
 import numpyro.distributions as dist
 import numpyro.optim as optim
 from numpyro.infer import SVI, Trace_ELBO
@@ -214,6 +209,9 @@ def main():
     # Get oldest date in full, and corresponding strain:
     reference_point, ref_point_distance = input_mod.get_oldest(full, tree)
 
+    if args.treat_mutation_units_as_normalised_to_genome_size:
+        ref_point_distance = ref_point_distance * args.treat_mutation_units_as_normalised_to_genome_size
+
     print(f"Using {reference_point}, with date: {lookup[reference_point][0]} and distance from root {ref_point_distance} as an arbitrary reference point")  
 
 
@@ -237,7 +235,9 @@ def main():
     initial_branch_lengths = input_mod.get_initial_branch_lengths_and_name_all_nodes(tree)
     names_init = sorted(initial_branch_lengths.keys())
     branch_distances_array = jnp.array(
-        [initial_branch_lengths[x] for x in names_init]) * args.treat_mutation_units_as_normalised_to_genome_size
+        [initial_branch_lengths[x] for x in names_init]) 
+    if args.treat_mutation_units_as_normalised_to_genome_size:
+        branch_distances_array = branch_distances_array * args.treat_mutation_units_as_normalised_to_genome_size
     
     name_to_pos = {x: i for i, x in enumerate(names_init)}
 
@@ -251,7 +251,9 @@ def main():
 
     if args.clock:
         print(f"Using clock rate {args.clock}")
-        clock_rate = args.clock * args.treat_mutation_units_as_normalised_to_genome_size
+        clock_rate = args.clock
+        if args.treat_mutation_units_as_normalised_to_genome_size:
+            clock_rate = clock_rate * args.treat_mutation_units_as_normalised_to_genome_size
     else:
         root_to_tip = helpers.do_branch_matmul(rows,cols,branch_distances_array,final_size=len(terminal_names))
 
@@ -264,6 +266,9 @@ def main():
 
         print(f"Root to tip regression: got rate of: {slope_per_year}")
         clock_rate = slope_per_year
+    
+    if clock_rate < 1 and not args.treat_mutations_as_normalised_to_genome_size:
+        raise ValueError("Clock rate is less than 1 mutation per year. This probably means you need to specify a genome_size with --treat_mutations_as_normalised_to_genome size. If you are sure that you do not, set that parameter to 1.0.")
 
 
 
@@ -296,30 +301,12 @@ def main():
                 best_params = svi.get_params(state)
                 lowest_loss = loss
             if step % 10 == 0 or step==num_steps-1 :
-                results = collections.OrderedDict()
+                results = my_model.get_logging_results(svi.get_params(state))
                 results['step'] = step
                 results['loss'] = loss
-                params = svi.get_params(state)
-                times = my_model.get_branch_times(params)
-                new_dates = my_model.calc_dates(times, params['root_date'])
-                results['date_cor'] = np.corrcoef(
-                    terminal_target_dates_array,
-                    new_dates)[0, 1]
-                results['date_error']  = np.mean(
-                    np.abs(terminal_target_dates_array -
-                            new_dates))  # Average date error should be small
-                results['date_error_med']  = np.median(
-                    np.abs(terminal_target_dates_array -
-                            new_dates))  # Average date error should be small
-                
-                results['max_date_error'] = np.max(
-                    np.abs(terminal_target_dates_array - new_dates)
-                )  # We know that there are some metadata errors, so there probably should be some big errors
-                results['length_cor'] = np.corrcoef(
-                    branch_distances_array,
-                    times)[0, 1]  # This correlation should be relatively high
-                results['inferred_mut_rate'] = my_model.get_mutation_rate(params)
-                results['root_date'] = params['root_date']
+                results.move_to_end('loss', last=False)
+                results.move_to_end('step', last=False)
+
 
                 result_string = "\t".join([f"{name}:{value:.4f}" if "." in str(value) else f"{name}:{value}"  for name, value in results.items()])
                 print(result_string)
