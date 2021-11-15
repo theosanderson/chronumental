@@ -146,7 +146,7 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
     def get_logging_results(self, params):
         results =  super().get_logging_results(params)
         results['mutation_rate'] = self.get_mutation_rate(params)
-        results['concentration'] = params['concentration']
+        results['omega'] = params['omega']
         return results
 
     def set_initial_time(self):
@@ -179,13 +179,17 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
                                     scale=self.clock_rate,
                                     validate_args=True))
 
-        concentration = numpyro.sample("latent_concentration",dist.Normal(loc=0,scale=100))
-
         
 
+        omega = numpyro.sample("latent_omega", 
+                dist.TruncatedNormal(low=0.,
+                                    loc=1./self.clock_rate,
+                                    scale=1./self.clock_rate,
+                                    validate_args=True))
+        
         branch_distances = numpyro.sample(
             "branch_distances",
-            dist.NegativeBinomial2(mean=mutation_rate * branch_times / 365, concentration=concentration),
+            dist.NegativeBinomial2(mean=mutation_rate * branch_times / 365., concentration=mutation_rate * branch_times /  (365. * omega )),
             obs=self.branch_distances_array)
 
         calced_dates = self.calc_dates(branch_times, root_date)
@@ -208,9 +212,9 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
         mutation_rate_sigma = numpyro.param("mutation_rate_sigma", self.clock_rate,
                                 constraint=dist.constraints.positive)
 
-        concentration_param = numpyro.param("concentration", 5.0)
+        concentration_param = numpyro.param("omega", 5.0)
 
-        concentration = numpyro.sample("latent_concentration",dist.Delta(concentration_param))
+        concentration = numpyro.sample("latent_omega",dist.Delta(concentration_param))
 
         
         branch_times = numpyro.sample("latent_time_length",dist.Delta(time_length_mu))
