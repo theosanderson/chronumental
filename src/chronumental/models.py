@@ -186,10 +186,12 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
                                     loc=1./self.clock_rate,
                                     scale=1./self.clock_rate,
                                     validate_args=True))
+
+        branch_times_years = branch_times / 365.
         
         branch_distances = numpyro.sample(
             "branch_distances",
-            dist.NegativeBinomial2(mean=mutation_rate * branch_times / 365., concentration=mutation_rate * branch_times /  (365. * omega )),
+            dist.NegativeBinomial2(mean=mutation_rate * branch_times_years, concentration=mutation_rate * branch_times_years /  omega),
             obs=self.branch_distances_array)
 
         calced_dates = self.calc_dates(branch_times, root_date)
