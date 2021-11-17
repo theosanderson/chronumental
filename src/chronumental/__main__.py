@@ -50,9 +50,9 @@ parser.add_argument(
 )
 
 parser.add_argument('--variance_branch_length',
-                    default=1,
+                    default=100,
                     type=float,
-                    help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
+                    help="Scale factor for branch length prior.")
 
 parser.add_argument('--steps',
                     default=1000,

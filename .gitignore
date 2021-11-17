@@ -20,3 +20,4 @@ src/tree_chron.nwk
 .venv/**
 test_data/chronumental_dates_ebola.metadata.csv.tsv
 test_data/chronumental_timetree_divergence_tree.nexus
+mutation_rates.tsv

@@ -50,6 +50,7 @@ class ChronumentalModelBase(object):
             self.branch_distances_array,
             times)[0, 1]  # This correlation should be relatively high
         results['root_date'] = params['root_date']
+        results['variance_dates'] = params['variance_dates']
         return results
 
         
@@ -105,16 +106,21 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
             dist.Poisson(mutation_rate * branch_times / 365),
             obs=self.branch_distances_array)
 
+        variance_dates = numpyro.sample( "latent_variance_dates", dist.TruncatedNormal(low=0, loc=self.variance_dates, scale=10, validate_args=True))
+
         calced_dates = self.calc_dates(branch_times, root_date)
 
         final_dates = numpyro.sample(
             f"final_dates",
             dist.Normal(calced_dates,
-                        self.variance_dates * self.terminal_target_errors_array),
+                        variance_dates * self.terminal_target_errors_array),
             obs=self.terminal_target_dates_array)
 
     
     def guide(self):
+        variance_dates_param = numpyro.param("variance_dates", self.variance_dates)
+        variance_dates = numpyro.sample("latent_variance_dates", dist.Delta(variance_dates_param))
+
         root_date = numpyro.param("root_date", -365*self.ref_point_distance/self.clock_rate) 
 
         time_length_mu = numpyro.param("time_length_mu", self.initial_time,
@@ -210,14 +216,18 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
 
         calced_dates = self.calc_dates(branch_times, root_date)
 
+        variance_dates = numpyro.sample( "latent_variance_dates", dist.TruncatedNormal(low=0, loc=self.variance_dates, scale=10, validate_args=True))
+
         final_dates = numpyro.sample(
             f"final_dates",
             dist.Normal(calced_dates,
-                        self.variance_dates * self.terminal_target_errors_array),
+                        variance_dates * self.terminal_target_errors_array),
             obs=self.terminal_target_dates_array)
 
     
     def guide(self):
+        variance_dates_param = numpyro.param("variance_dates", self.variance_dates)
+        variance_dates = numpyro.sample("latent_variance_dates", dist.Delta(variance_dates_param))
         root_date = numpyro.param("root_date", -365*self.ref_point_distance/self.clock_rate) 
 
         time_length_mu = numpyro.param("time_length_mu", self.initial_time,
