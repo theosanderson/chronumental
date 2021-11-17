@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import numpy as onp
 from . import helpers
 import collections
+import pandas as pd
 
 class ChronumentalModelBase(object):
     def __init__(self,**kwargs):
@@ -16,6 +17,17 @@ class ChronumentalModelBase(object):
         self.ref_point_distance = kwargs['ref_point_distance']
 
         self.set_initial_time()
+
+    def get_per_branch_results(self,params):
+        results = pd.DataFrame({"branch_idx":range(self.branch_distances_array.shape[0])})
+        #results['relative_date_in_days'] = self.calc_dates(self.get_branch_times(params), params['root_date'])
+        return results
+
+    def calc_dates(self,branch_lengths_array, root_date):
+
+        calc_dates = helpers.do_branch_matmul(self.rows,        self.cols, branch_lengths_array= branch_lengths_array,
+                                       final_size = self.terminal_target_dates_array.shape[0])
+        return calc_dates + root_date
 
     def get_logging_results(self,params):
         results = collections.OrderedDict()
@@ -64,11 +76,7 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
         self.branch_distances_array 
     ) / self.clock_rate ,self.expected_min_between_transmissions )
 
-    def calc_dates(self,branch_lengths_array, root_date):
 
-        calc_dates = helpers.do_branch_matmul(self.rows,        self.cols, branch_lengths_array= branch_lengths_array,
-                                       final_size = self.terminal_target_dates_array.shape[0])
-        return calc_dates + root_date
     
     def model(self):
         root_date = numpyro.sample(
@@ -142,6 +150,18 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
         self.expected_min_between_transmissions = kwargs['model_configuration']['expected_min_between_transmissions']
 
         super().__init__(**kwargs)
+
+    def get_per_branch_results(self, params):
+        
+        results =  super().get_per_branch_results(params)
+        # should be: (branch_distances_array * omega + mutation_rate * branch_times_years - omega ) / ( branch_times_years * (1 + omega) )
+        tau =self.get_branch_times(params)/365
+        #tau = jnp.maximum(tau, params['omega']/self.get_mutation_rate(params))
+        mutation_rates = (self.branch_distances_array * params['omega'] + self.get_mutation_rate(params) * (tau) - params['omega'] ) / ( (tau) * (1 + params['omega']) )
+        mutation_rates = jnp.maximum(mutation_rates, 0.0)
+        results['mutation_rate'] = mutation_rates 
+        
+        return results
        
     def get_logging_results(self, params):
         results =  super().get_logging_results(params)
@@ -153,12 +173,6 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
         self.initial_time = jnp.maximum(365 * (
         self.branch_distances_array 
     ) / self.clock_rate ,self.expected_min_between_transmissions )
-
-    def calc_dates(self,branch_lengths_array, root_date):
-
-        calc_dates = helpers.do_branch_matmul(self.rows,        self.cols, branch_lengths_array= branch_lengths_array,
-                                       final_size = self.terminal_target_dates_array.shape[0])
-        return calc_dates + root_date
     
     def model(self):
         root_date = numpyro.sample(

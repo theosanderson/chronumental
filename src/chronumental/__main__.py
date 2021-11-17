@@ -267,8 +267,8 @@ def main():
         print(f"Root to tip regression: got rate of: {slope_per_year}")
         clock_rate = slope_per_year
     
-    if clock_rate < 1 and not args.treat_mutations_as_normalised_to_genome_size:
-        raise ValueError("Clock rate is less than 1 mutation per year. This probably means you need to specify a genome_size with --treat_mutations_as_normalised_to_genome size. If you are sure that you do not, set that parameter to 1.0.")
+    if clock_rate < 1 and not args.treat_mutation_units_as_normalised_to_genome_size:
+        raise ValueError("Clock rate is less than 1 mutation per year. This probably means you need to specify a genome_size with --treat_mutation_units_as_normalised_to_genome_size. If you are sure that you do not, set that parameter to 1.0.")
 
 
 
@@ -335,7 +335,7 @@ def main():
                 my_model.get_branch_times(svi.get_params(state)).tolist()))
 
         
-        total_lengths_in_time = {}
+        total_lengths_in_time = {} 
 
         total_lengths= dict()
 
@@ -372,6 +372,12 @@ def main():
         
         output_meta.to_csv(args.dates_out, sep="\t", index=False)
         print(f"Wrote predicted dates to {args.dates_out}")
+
+        results = my_model.get_per_branch_results(svi.get_params(state))
+        results['strain'] = names_init
+        results.to_csv("mutation_rates.tsv", sep="\t", index=False)
+        print("Wrote mutation rates to mutation_rates.tsv")
+
 
 if __name__ == "__main__":
     main()
