@@ -228,7 +228,7 @@ class AdditiveRelaxedClock(ChronumentalModelBase):
         mutation_rate_sigma = numpyro.param("mutation_rate_sigma", self.clock_rate,
                                 constraint=dist.constraints.positive)
 
-        omega_param = numpyro.param("omega", 1/self.clock_rate)
+        omega_param = numpyro.param("omega", 1/self.clock_rate, constraint=dist.constraints.positive)
 
         omega = numpyro.sample("latent_omega",dist.Delta(omega_param))
 
