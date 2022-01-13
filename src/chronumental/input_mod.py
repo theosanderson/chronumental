@@ -1,5 +1,6 @@
 from os import name
 import pandas as pd
+import numpy as np
 import gzip
 import datetime
 import tqdm
@@ -32,6 +33,8 @@ def fromYearFraction(yearFraction):
     #check type is float
     if not isinstance(yearFraction, float):
         raise ValueError("Not a float")
+    if np.isnan(yearFraction):
+        raise ValueError("Is NaN")
     year = int(yearFraction)
     fraction = yearFraction - year
     startOfThisYear = dt(year=year, month=1, day=1)
@@ -80,6 +83,7 @@ def read_tree(tree_file):
                 node.label = node.label.replace("'", "")
         return tree
 def get_datetime_and_error(x):
+        if x == ""
         try:
             return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
         except TypeError:
