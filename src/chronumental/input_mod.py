@@ -87,7 +87,11 @@ def get_datetime_and_error(x):
         try:
             return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
         except TypeError:
-            return [fromYearFraction(x),1]
+            try:
+                return [fromYearFraction(x),1]
+            except ValueError:
+                print(f"Warning: could not parse date {x}, it will not feature in calculation.")
+                    return [None,None]
         except ValueError:
             try:
                 return fromYearFraction(x)
