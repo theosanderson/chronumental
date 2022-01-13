@@ -83,7 +83,7 @@ def read_tree(tree_file):
                 node.label = node.label.replace("'", "")
         return tree
 def get_datetime_and_error(x):
-        if x == ""
+        
         try:
             return [datetime.datetime.strptime(x, '%Y-%m-%d'),1]
         except TypeError:
