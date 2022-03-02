@@ -8,6 +8,8 @@ Chronumental is a tool for creating a "time-tree" (where distance on the tree re
 
 What sets Chronumental apart from most other tools is that it scales to extremely large trees, which can contain millions of nodes. Chronumental uses JAX to represent the task of computing a time tree in a differentiable graph for efficient calculation on a CPU or GPU.
 
+#### [📝Read the preprint](https://www.biorxiv.org/content/10.1101/2021.10.27.465994v1)
+
 ### Installation
 
 #### Method 1: Using pipx (recommended for basic use - installs in its own isolated environment)
