@@ -25,6 +25,16 @@ pipx install  chronumental
 pip install chronumental
 ```
 
+#### Method 3: Bioconda
+
+Chronumental is [now](https://github.com/bioconda/bioconda-recipes/pull/34410) available on bioconda
+
+```
+conda config --add channels bioconda
+conda install chronumental
+```
+
+
 ### Usage
 
 This demo uses trees and metadata collated by the [UShER](https://github.com/yatisht/usher) [team](https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/).
