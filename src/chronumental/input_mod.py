@@ -173,15 +173,29 @@ def get_initial_branch_lengths_and_name_all_nodes(tree):
 
 def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
     # Here we define row col coordinates for 1s in a sparse matrix of mostly 0s
-    rows = []
-    cols = []
-    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Traversing tree for sparse matrix creation"):
+    count = 0
+
+    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Counting tree for sparse matrix creation"):
         if leaf.label in terminal_name_to_pos:
             cur_node = leaf
-            rows.append(terminal_name_to_pos[leaf.label])
-            cols.append(name_to_pos[cur_node.label])
+            count+=1
             while cur_node.parent is not None:
-                rows.append(terminal_name_to_pos[leaf.label])
-                cols.append(name_to_pos[cur_node.parent.label])
+                count+=1
+                cur_node = cur_node.parent
+    
+    rows = np.zeros(count, dtype=np.int)
+    cols = np.zeros(count, dtype=np.int)
+
+    location = 0
+    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Populating sparse matrix rows, cols"):
+        if leaf.label in terminal_name_to_pos:
+            cur_node = leaf
+            rows[location] = terminal_name_to_pos[leaf.label]
+            cols[location] = name_to_pos[cur_node.label]
+            location+=1
+            while cur_node.parent is not None:
+                rows[location] = terminal_name_to_pos[leaf.label]
+                cols[location] = name_to_pos[cur_node.parent.label]
+                location+=1
                 cur_node = cur_node.parent
     return rows,cols
