@@ -94,3 +94,7 @@ optional arguments:
 ### Similar tools
 
 [TreeTime](https://github.com/neherlab/treetime) is a more advanced tool for inferring time trees. If you have a dataset of e.g. <10,000 rather than millions of nodes you are definitely best off trying it. The TreeTime readme also links to other similar tools.
+
+### Troubleshooting
+
+- Chronumental uses the earliest date in your dataset as an anchor to calibrate everything else. If this earliest date is wrong due to a metadata error things won't work well.
