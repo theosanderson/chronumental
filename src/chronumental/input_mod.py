@@ -194,7 +194,7 @@ def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
             cols[location] = name_to_pos[cur_node.label]
             location+=1
             while cur_node.parent is not None:
-                rows[location] = name_to_pos[leaf.label]
+                rows[location] = terminal_name_to_pos[leaf.label]
                 cols[location] = name_to_pos[cur_node.parent.label]
                 location+=1
                 cur_node = cur_node.parent
