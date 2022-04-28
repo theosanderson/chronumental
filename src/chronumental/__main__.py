@@ -122,6 +122,10 @@ parser.add_argument('--clipped_adam',
                 help=("Will use the clipped version of Adam"))
 
 
+parser.add_argument('--reference_node',
+                    default=None,
+                    type=str,
+                    help="A reference node to use for computing dates. This should be early in the tree, and have a correct date. If not specified it will be picked as the oldest node, but often these can be metadata errors.")
 
 
 
@@ -207,7 +211,10 @@ def main():
  
 
     # Get oldest date in full, and corresponding strain:
-    reference_point, ref_point_distance = input_mod.get_oldest(full, tree)
+    if args.reference_node:
+        reference_point, ref_point_distance = input_mod.get_specific(full, tree, args.reference_node)
+    else:
+        reference_point, ref_point_distance = input_mod.get_oldest(full, tree)
 
     if args.treat_mutation_units_as_normalised_to_genome_size:
         ref_point_distance = ref_point_distance * args.treat_mutation_units_as_normalised_to_genome_size
