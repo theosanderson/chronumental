@@ -135,6 +135,12 @@ def get_oldest(full, tree):
     distance = tree.distance_between(tree.root, leaf_to_node[reference_point])
     return reference_point, distance
 
+def get_specific(full, tree, name):
+    leaf_to_node = tree.label_to_node(selection="leaves")
+    reference_point = name
+    distance = tree.distance_between(tree.root, leaf_to_node[reference_point])
+    return reference_point, distance
+
 def get_target_dates(tree, lookup, reference_point):
     """
     Returns a list of dictionary mapping names to integer dates being targeted.
