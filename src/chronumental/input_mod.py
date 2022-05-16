@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import gzip
 import datetime
-import tqdm
+from alive_progress import alive_it
 import treeswift
 import xopen
 import lzma
@@ -148,8 +148,8 @@ def get_target_dates(tree, lookup, reference_point):
     """
     terminal_targets = {}
     terminal_targets_error = {}
-    for terminal in tqdm.tqdm(tree.traverse_leaves(),
-                                "Creating target date array"):
+    for terminal in alive_it(tree.traverse_leaves(),
+                                title = "Creating target date array"):
         
         terminal.label = terminal.label.replace("'", "")
         if terminal.label in lookup:
@@ -162,8 +162,8 @@ def get_target_dates(tree, lookup, reference_point):
 
 def get_initial_branch_lengths_and_name_all_nodes(tree):
     initial_branch_lengths = {}
-    for i, node in tqdm.tqdm(enumerate(tree.traverse_preorder()),
-                                "finding initial branch_lengths"):
+    for i, node in alive_it(enumerate(tree.traverse_preorder()),
+                                title="finding initial branch_lengths"):
         # If node label looks like a float, then it's something else, so we set to None:
         if node.label and node.label.replace(".", "").strip().isdigit():
             node.label = None
@@ -181,7 +181,7 @@ def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
     # Here we define row col coordinates for 1s in a sparse matrix of mostly 0s
     count = 0
 
-    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Counting tree for sparse matrix creation"):
+    for leaf in alive_it(tree.traverse_leaves(), title="Counting tree for sparse matrix creation"):
         if leaf.label in terminal_name_to_pos:
             cur_node = leaf
             count+=1
@@ -193,7 +193,7 @@ def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
     cols = np.zeros(count, dtype=np.int)
 
     location = 0
-    for leaf in tqdm.tqdm(tree.traverse_leaves(), "Populating sparse matrix rows, cols"):
+    for leaf in alive_it(tree.traverse_leaves(), title = "Populating sparse matrix rows, cols"):
         if leaf.label in terminal_name_to_pos:
             cur_node = leaf
             rows[location] = terminal_name_to_pos[leaf.label]
