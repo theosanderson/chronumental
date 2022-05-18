@@ -11,7 +11,14 @@ Welcome to Chronumental's documentation!
    :caption: Contents:
 
 
-Main Command
+Installation
+============
+To install Chronumental using pip, run:
+
+      pip install chronumental
+      
+
+Usage
 ============
 .. argparse::
    :module: chronumental.__main__

@@ -5,3 +5,5 @@ treeswift
 scipy
 xopen
 sphinx-argparse
+sphinx-rtd-theme
+myst-parser
