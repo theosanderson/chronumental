@@ -10,6 +10,9 @@ What sets Chronumental apart from most other tools is that it scales to extremel
 
 #### [📝 Read the preprint](https://www.biorxiv.org/content/10.1101/2021.10.27.465994v1)
 
+#### [📚 View the documentation](https://chronumental.readthedocs.io/en/latest/
+
+
 ### Installation
 
 #### Method 1: Using pipx (recommended for basic use - installs in its own isolated environment)
