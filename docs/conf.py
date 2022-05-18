@@ -21,10 +21,6 @@ project = 'Chronumental'
 copyright = '2022, Theo Sanderson'
 author = 'Theo Sanderson'
 
-# The full version, including alpha/beta/rc tags
-release = '2022'
-
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -48,7 +44,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_book_theme'
+html_theme = 'furo'
 
 html_theme_options = {
     'analytics_id': 'G-XXXXXXXXXX',  #  Provided by Google in your dashboard
