@@ -46,7 +46,7 @@ chronumental --tree public-2021-10-06.all.nwk.gz --dates public-2021-10-06.metad
 ```
 
 ### More detailed documentation
-## [Visit out documentation page](https://chronumental.readthedocs.io/en/latest/)
+#### Please [visit our documentation page](https://chronumental.readthedocs.io/en/latest/) to learn more about the parameters you can use to control chronumental.
 
 
 ### Similar tools
