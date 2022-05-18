@@ -1,140 +1,11 @@
 
-import argparse
-parser = argparse.ArgumentParser(
-    description=
-    'Convert a distance tree into time tree with distances in days.')
-parser.add_argument(
-    '--tree',
-    help=
-    'an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance in integer number of mutations',
-    required=True)
-
-parser.add_argument(
-    '--dates',
-    help=
-    'A metadata file with columns strain and date (in "2020-01-02" format, or less precisely, "2021-01", "2021")',
-    required=True)
-
-parser.add_argument('--dates_out',
-                    default=None,
-                    type=str,
-                    help="Output for date tsv (otherwise will use default)")
-
-parser.add_argument('--tree_out',
-                    default=None,
-                    type=str,
-                    help="Output for tree (otherwise will use default)")
-
-parser.add_argument('--always_use_final_params',
-                    action='store_true',
-                    help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
-
-parser.add_argument("--treat_mutation_units_as_normalised_to_genome_size",
-default=None
-,type=int,
-help="If your branch sizes, and mutation rate, are normalised to per-site values, then enter the genome size here.")
-
-
-parser.add_argument(
-    '--clock',
-    help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree. If not given we will attempt to estimate this by RTT. This is only used as a starting point, unless you supply --enforce_exact_clock.',
-    default=None,
-    type=float)
-
-parser.add_argument(
-    '--variance_dates',
-    default=0.3,
-    type=float,
-    help=
-    "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
-)
-
-parser.add_argument('--variance_branch_length',
-                    default=1,
-                    type=float,
-                    help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
-
-parser.add_argument('--steps',
-                    default=1000,
-                    type=int,
-                    help="Number of steps to use for the SVI")
-
-parser.add_argument('--lr',
-                    default=0.1,
-                    type=float,
-                    help="Adam learning rate")
-
-
-
-parser.add_argument('--name_all_nodes',
-                    action='store_true',
-                    help="Should we name all nodes in the output tree?")
-
-parser.add_argument('--expected_min_between_transmissions',
-                    default=3,
-                    type=int,
-                    help="For forming the prior, an expected minimum time between transmissions in days")
-
-parser.add_argument('--only_use_full_dates',
-                    action='store_true',
-                    help="Only use full dates, given to the precision of a day")
-
-parser.add_argument('--model',
-                    default="DeltaGuideWithStrictLearntClock",
-                    type=str,
-                    help="Model type to use")
-
-parser.add_argument('--output_unit',
-                    type=str,
-                    help="Unit for the output branch lengths on the time tree.",
-                    choices=["days", "years"],
-                    default="days")
-                    
-
-
-
-parser.add_argument('--variance_on_clock_rate',
-                    action='store_true',
-                    help=("Will cause the clock rate to be "
-                    "drawn from a random distribution with a learnt variance."))
-
-parser.add_argument('--enforce_exact_clock',
-                    action='store_true',
-                    help=("Will cause the clock rate to be exactly"
-                    " fixed at the value specified in clock, rather than learnt"))
-
-parser.add_argument('--use_gpu',
-                    action='store_true',
-                    help=("Will attempt to use the GPU. You will need a version of CUDA installed to suit Numpyro."))
-
-parser.add_argument('--use_wandb',  
-                    action='store_true',
-                    help="This flag will trigger the use of Weights and Biases to log the fitting process. This must be installed with 'pip install wandb'")    
-
-
-parser.add_argument('--wandb_project_name',
-                    default="chronumental",
-                    type=str,
-                    help="Wandb project name")
-
-parser.add_argument('--clipped_adam',
-                action='store_true',
-                help=("Will use the clipped version of Adam"))
-
-
-parser.add_argument('--reference_node',
-                    default=None,
-                    type=str,
-                    help="A reference node to use for computing dates. This should be early in the tree, and have a correct date. If not specified it will be picked as the oldest node, but often these can be metadata errors.")
-
-
-
-args = parser.parse_args()
-
 import os
-if not args.use_gpu:
+import sys
+GPU_REQUESTED = "use_gpu" in sys.argv
+if not GPU_REQUESTED:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import datetime
+
 
 import pandas as pd
 import jax.numpy as jnp
@@ -162,10 +33,144 @@ from jax.lib import xla_bridge
 platform = xla_bridge.get_backend().platform
 print(f"Platform: {platform}")
 
-if args.use_gpu and platform == "cpu":
+if GPU_REQUESTED and platform == "cpu":
     print("GPU requested but was not available")
     print("This probably reflects your CUDA/jaxlib installation")
-    args.use_gpu = False
+
+
+
+import argparse
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description=
+        'Convert a distance tree into time tree with distances in days.')
+    parser.add_argument(
+        '--tree',
+        help=
+        'an input newick tree, potentially gzipped, with branch lengths reflecting genetic distance in integer number of mutations',
+        required=True)
+
+    parser.add_argument(
+        '--dates',
+        help=
+        'A metadata file with columns strain and date (in "2020-01-02" format, or less precisely, "2021-01", "2021")',
+        required=True)
+
+    parser.add_argument('--dates_out',
+                        default=None,
+                        type=str,
+                        help="Output for date tsv (otherwise will use default)")
+
+    parser.add_argument('--tree_out',
+                        default=None,
+                        type=str,
+                        help="Output for tree (otherwise will use default)")
+
+    parser.add_argument('--always_use_final_params',
+                        action='store_true',
+                        help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
+
+    parser.add_argument("--treat_mutation_units_as_normalised_to_genome_size",
+    default=None
+    ,type=int,
+    help="If your branch sizes, and mutation rate, are normalised to per-site values, then enter the genome size here.")
+
+
+    parser.add_argument(
+        '--clock',
+        help='Molecular clock rate. This should be in units of something per year, where the "something" is the units on the tree. If not given we will attempt to estimate this by RTT. This is only used as a starting point, unless you supply --enforce_exact_clock.',
+        default=None,
+        type=float)
+
+    parser.add_argument(
+        '--variance_dates',
+        default=0.3,
+        type=float,
+        help=
+        "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
+    )
+
+    parser.add_argument('--variance_branch_length',
+                        default=1,
+                        type=float,
+                        help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
+
+    parser.add_argument('--steps',
+                        default=1000,
+                        type=int,
+                        help="Number of steps to use for the SVI")
+
+    parser.add_argument('--lr',
+                        default=0.1,
+                        type=float,
+                        help="Adam learning rate")
+
+
+
+    parser.add_argument('--name_all_nodes',
+                        action='store_true',
+                        help="Should we name all nodes in the output tree?")
+
+    parser.add_argument('--expected_min_between_transmissions',
+                        default=3,
+                        type=int,
+                        help="For forming the prior, an expected minimum time between transmissions in days")
+
+    parser.add_argument('--only_use_full_dates',
+                        action='store_true',
+                        help="Only use full dates, given to the precision of a day")
+
+    parser.add_argument('--model',
+                        default="DeltaGuideWithStrictLearntClock",
+                        type=str,
+                        help="Model type to use")
+
+    parser.add_argument('--output_unit',
+                        type=str,
+                        help="Unit for the output branch lengths on the time tree.",
+                        choices=["days", "years"],
+                        default="days")
+                        
+
+
+
+    parser.add_argument('--variance_on_clock_rate',
+                        action='store_true',
+                        help=("Will cause the clock rate to be "
+                        "drawn from a random distribution with a learnt variance."))
+
+    parser.add_argument('--enforce_exact_clock',
+                        action='store_true',
+                        help=("Will cause the clock rate to be exactly"
+                        " fixed at the value specified in clock, rather than learnt"))
+
+    parser.add_argument('--use_gpu',
+                        action='store_true',
+                        help=("Will attempt to use the GPU. You will need a version of CUDA installed to suit Numpyro."))
+
+    parser.add_argument('--use_wandb',  
+                        action='store_true',
+                        help="This flag will trigger the use of Weights and Biases to log the fitting process. This must be installed with 'pip install wandb'")    
+
+
+    parser.add_argument('--wandb_project_name',
+                        default="chronumental",
+                        type=str,
+                        help="Wandb project name")
+
+    parser.add_argument('--clipped_adam',
+                    action='store_true',
+                    help=("Will use the clipped version of Adam"))
+
+
+    parser.add_argument('--reference_node',
+                        default=None,
+                        type=str,
+                        help="A reference node to use for computing dates. This should be early in the tree, and have a correct date. If not specified it will be picked as the oldest node, but often these can be metadata errors.")
+
+    return parser
+
+
 
 
 def prepend_to_file_name(full_path, to_prepend):
@@ -177,6 +182,8 @@ def prepend_to_file_name(full_path, to_prepend):
 
 
 def main():
+    parser = get_parser()
+    args = parser.parse_args()
     
 
     if args.use_wandb:
