@@ -7,4 +7,4 @@ xopen
 sphinx-argparse
 sphinx-rtd-theme
 myst-parser
-nextstrain-sphinx-theme
+sphinx-book-theme
