@@ -8,3 +8,4 @@ sphinx-argparse
 sphinx-rtd-theme
 myst-parser
 sphinx-book-theme
+furo
