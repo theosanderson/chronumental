@@ -1,0 +1,6 @@
+numpyro==0.9.0
+alive-progress
+pandas
+treeswift
+scipy
+xopen
