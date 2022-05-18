@@ -45,7 +45,7 @@ wget https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/2021/10/06/public-2021-1
 chronumental --tree public-2021-10-06.all.nwk.gz --dates public-2021-10-06.metadata.tsv.gz --steps 100
 ```
 
-📚 Please [visit our documentation page](https://chronumental.readthedocs.io/en/latest/) to learn more about the parameters you can use to control chronumental.
+📚 Please [visit our documentation page](https://chronumental.readthedocs.io/en/latest/) to learn more about the parameters you can use to control Chronumental.
 
 
 ### Similar tools
