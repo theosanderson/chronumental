@@ -4,3 +4,4 @@ pandas
 treeswift
 scipy
 xopen
+sphinx-argparse
