@@ -48,7 +48,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'nextstrain-sphinx-theme'
+html_theme = 'sphinx_rtd_theme'
 
 html_theme_options = {
     'analytics_id': 'G-XXXXXXXXXX',  #  Provided by Google in your dashboard
@@ -64,8 +64,7 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
-    'titles_only': False,
-     'logo' : False
+    'titles_only': False
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
