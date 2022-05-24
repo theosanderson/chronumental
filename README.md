@@ -50,6 +50,10 @@ chronumental --tree public-2021-10-06.all.nwk.gz --dates public-2021-10-06.metad
 
 📚 Please [visit our documentation page](https://chronumental.readthedocs.io/en/latest/) to learn more about the parameters you can use to control Chronumental.
 
+### Integrations
+
+[Taxonium](https://github.com/theosanderson/taxonium) can automatically call Chronumental, and generate a combined visualisation that allows switching between distance and time phylogenies
+
 
 ### Similar tools
 
