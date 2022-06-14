@@ -20,7 +20,7 @@ class ChronumentalModelBase(object):
     def get_logging_results(self,params):
         results = collections.OrderedDict()
         times = self.get_branch_times(params)
-        new_dates = self.calc_dates(times, params['root_date'])
+        new_dates = self.calc_dates(times, params['root_date_mu'])
         results['date_cor'] = onp.corrcoef(
             self.terminal_target_dates_array,
             new_dates)[0, 1]
@@ -37,7 +37,8 @@ class ChronumentalModelBase(object):
         results['length_cor'] = onp.corrcoef(
             self.branch_distances_array,
             times)[0, 1]  # This correlation should be relatively high
-        results['root_date'] = params['root_date']
+        
+        results['root_date'] = params['root_date_mu']
         return results
 
         
@@ -107,7 +108,9 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
 
     
     def guide(self):
-        root_date = numpyro.param("root_date", -365*self.ref_point_distance/self.clock_rate) 
+        root_date_mu = numpyro.param("root_date_mu", -365*self.ref_point_distance/self.clock_rate) 
+
+        root_date = numpyro.sample("root_date",dist.Delta(root_date_mu))
 
         time_length_mu = numpyro.param("time_length_mu", self.initial_time,
                                 constraint=dist.constraints.positive)

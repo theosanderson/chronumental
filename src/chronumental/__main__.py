@@ -378,7 +378,7 @@ def main():
         print(f"Wrote tree to {args.tree_out}")
 
         origin_date = lookup[reference_point][0]
-        output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date'].tolist())) for name,x in total_lengths_in_time.items()}
+        output_dates = {name: origin_date +  datetime.timedelta(days=(x + params['root_date_mu'].tolist())) for name,x in total_lengths_in_time.items()}
 
         names, values = zip(*output_dates.items())
         output_meta = pd.DataFrame({"strain": names, "predicted_date": values})
