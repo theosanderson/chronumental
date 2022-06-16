@@ -66,10 +66,6 @@ def get_parser():
                         type=str,
                         help="Output for tree (otherwise will use default)")
 
-    parser.add_argument('--always_use_final_params',
-                        action='store_true',
-                        help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
-
     parser.add_argument("--treat_mutation_units_as_normalised_to_genome_size",
     default=None
     ,type=int,
@@ -167,6 +163,12 @@ def get_parser():
                         default=None,
                         type=str,
                         help="A reference node to use for computing dates. This should be early in the tree, and have a correct date. If not specified it will be picked as the oldest node, but often these can be metadata errors.")
+
+    
+    
+    parser.add_argument('--always_use_final_params',
+                        action='store_true',
+                        help="Will force the model to always use the final parameters, rather than simply using those that gave the lowest loss")
 
     return parser
 
