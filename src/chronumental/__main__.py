@@ -87,9 +87,9 @@ def get_parser():
     )
 
     parser.add_argument('--variance_branch_length',
-                        default=1,
+                        default=10,
                         type=float,
-                        help="Scale factor for branch length distribution. Essentially how close we want to match the expectation of the Poisson.")
+                        help="Scale factor for branch length distribution. This is used to create a weak prior for the amount of time each branch represents.")
 
     parser.add_argument('--steps',
                         default=1000,
