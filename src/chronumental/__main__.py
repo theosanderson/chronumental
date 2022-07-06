@@ -1,7 +1,7 @@
 
 import os
 import sys
-GPU_REQUESTED = "use_gpu" in sys.argv
+GPU_REQUESTED = "--use_gpu" in sys.argv
 if not GPU_REQUESTED:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import datetime
