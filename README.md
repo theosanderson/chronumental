@@ -61,4 +61,4 @@ chronumental --tree public-2021-10-06.all.nwk.gz --dates public-2021-10-06.metad
 
 ### Troubleshooting
 
-- Chronumental uses the earliest date in your dataset as an anchor to calibrate everything else. If this earliest date is wrong due to a metadata error things won't work well.
+- Chronumental uses the earliest date in your dataset as an anchor to calibrate everything else. If this earliest date is wrong due to a metadata error things won't work well, you can set the reference node manually with `--reference_node`
