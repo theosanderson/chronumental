@@ -189,8 +189,8 @@ def get_rows_and_cols_of_sparse_matrix(tree,terminal_name_to_pos, name_to_pos):
                 count+=1
                 cur_node = cur_node.parent
     
-    rows = np.zeros(count, dtype=np.int)
-    cols = np.zeros(count, dtype=np.int)
+    rows = np.zeros(count, dtype=int)
+    cols = np.zeros(count, dtype=int)
 
     location = 0
     for leaf in alive_it(tree.traverse_leaves(), title = "Populating sparse matrix rows, cols"):
