@@ -47,7 +47,7 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
     def __init__(self, **kwargs):
 
         self.clock_rate = kwargs['model_configuration']["clock_rate"]
-        self.variance_branch_length = kwargs['model_configuration']["variance_branch_length"]
+     
         self.variance_dates = kwargs['model_configuration']['variance_dates']
         self.enforce_exact_clock = kwargs['model_configuration']['enforce_exact_clock']
         self.variance_on_clock_rate = kwargs['model_configuration']['variance_on_clock_rate']
@@ -78,10 +78,8 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
 
         branch_times = numpyro.sample(
             "latent_time_length",
-            dist.TruncatedNormal(low=0,
-                                 loc=self.initial_time,
-                                 scale=self.variance_branch_length,
-                                 validate_args=True))
+            dist.Uniform(low=onp.ones(self.branch_distances_array.shape[0]) * 0,
+                            high=onp.ones(self.branch_distances_array.shape[0]) * 365*10000))
 
         if self.enforce_exact_clock:
             mutation_rate = self.clock_rate  

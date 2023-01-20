@@ -86,10 +86,6 @@ def get_parser():
         "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
     )
 
-    parser.add_argument('--variance_branch_length',
-                        default=10,
-                        type=float,
-                        help="Scale factor for branch length distribution. This is used to create a weak prior for the amount of time each branch represents.")
 
     parser.add_argument('--steps',
                         default=1000,
@@ -290,7 +286,6 @@ def main():
 
     model_configuration = {
         "clock_rate":clock_rate, 
-        "variance_branch_length":args.variance_branch_length ,
         "variance_dates":args.variance_dates, 
         "expected_min_between_transmissions": args.expected_min_between_transmissions,
         "enforce_exact_clock": args.enforce_exact_clock,
