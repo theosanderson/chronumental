@@ -23,7 +23,7 @@ def read_tabular_file(tabular_file_name, **kwargs):
     if stripped_name.endswith(".tsv"):
         return pd.read_csv(tabular_file, sep="\t", **kwargs)
     raise Exception(
-        f"Tabular file {tabular_file} was expected to end in tsv or csv")
+        f"Tabular file {tabular_file_name} was expected to end in tsv or csv")
 
 
 def get_correct_column(columns, possible_values):
@@ -42,6 +42,8 @@ def fromYearFraction(yearFraction):
     if np.isnan(yearFraction):
         raise ValueError("Is NaN")
     year = int(yearFraction)
+    if year==0:
+        raise ValueError("The year zero does not exist in the Gregorian calendar")
     fraction = yearFraction - year
     startOfThisYear = dt(year=year, month=1, day=1)
     startOfNextYear = dt(year=year + 1, month=1, day=1)
