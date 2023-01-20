@@ -95,10 +95,9 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
         else:
             mutation_rate = numpyro.sample(
                 f"latent_mutation_rate",
-                dist.TruncatedNormal(low=0,
-                                     loc=self.clock_rate,
-                                     scale=self.clock_rate,
-                                     validate_args=True))
+                dist.Uniform(
+                    low=0.0,
+                    high=self.clock_rate * 1000.0))
 
         branch_distances = numpyro.sample("branch_distances",
                                           dist.Poisson(mutation_rate *
