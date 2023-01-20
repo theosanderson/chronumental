@@ -16,7 +16,7 @@ Installation
 To install Chronumental using pip, run:
 
       pip install chronumental
-      
+
 
 Usage
 ============

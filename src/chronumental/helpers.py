@@ -2,9 +2,11 @@ import functools
 import jax
 import jax.numpy as jnp
 
+
 def get_unnnamed_node_label(i):
     name = f"NODE_{i:07d}"
     return name
+
 
 # Credit: Guillem Cucurull http://gcucurull.github.io/deep-learning/2020/06/03/jax-sparse-matrix-multiplication/
 @functools.partial(jax.jit, static_argnums=(2))
@@ -30,8 +32,8 @@ def sp_matmul(A, B, shape):
     return res
 
 
-def do_branch_matmul(rows, cols,branch_lengths_array, final_size):
+def do_branch_matmul(rows, cols, branch_lengths_array, final_size):
     A = ((rows, cols), jnp.ones_like(cols))
     B = branch_lengths_array.reshape((branch_lengths_array.shape[0], 1))
     calc_dates = sp_matmul(A, B, final_size).squeeze()
-    return calc_dates 
+    return calc_dates
