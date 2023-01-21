@@ -385,8 +385,7 @@ def main():
         total_lengths = dict()
 
         for i, node in enumerate(tree2.traverse_preorder()):
-            if node.label and node.label.replace(".", "").strip().isdigit():
-                node.label = None
+
             if not node.label:
                 node_name = helpers.get_unnnamed_node_label(i)
                 if args.name_all_nodes:
