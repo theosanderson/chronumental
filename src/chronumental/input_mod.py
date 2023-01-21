@@ -203,9 +203,6 @@ def get_initial_branch_lengths_and_name_all_nodes(tree):
     initial_branch_lengths = {}
     for i, node in alive_it(enumerate(tree.traverse_preorder()),
                             title="finding initial branch_lengths"):
-        # If node label looks like a float, then it's something else, so we set to None:
-        if node.label and node.label.replace(".", "").strip().isdigit():
-            node.label = None
         if not node.label:
             name = helpers.get_unnnamed_node_label(i)
             node.label = name
