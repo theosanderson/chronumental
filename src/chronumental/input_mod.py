@@ -201,7 +201,7 @@ def get_target_dates(tree, lookup, reference_point):
 
 def get_initial_branch_lengths_and_name_all_nodes(tree):
     initial_branch_lengths = {}
-    for i, node in alive_it(enumerate(tree.traverse_preorder()),
+    for i, node in alive_it(enumerate(helpers.preorder_traversal(tree.root)),
                             title="finding initial branch_lengths"):
         if not node.label:
             name = helpers.get_unnnamed_node_label(i)

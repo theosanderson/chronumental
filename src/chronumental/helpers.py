@@ -7,7 +7,11 @@ def get_unnnamed_node_label(i):
     name = f"NODE_{i:07d}"
     return name
 
-
+def preorder_traversal(node):
+    yield node
+    for clade in node.children:
+        yield from preorder_traversal(clade)
+        
 # Credit: Guillem Cucurull http://gcucurull.github.io/deep-learning/2020/06/03/jax-sparse-matrix-multiplication/
 @functools.partial(jax.jit, static_argnums=(2))
 def sp_matmul(A, B, shape):

@@ -384,7 +384,7 @@ def main():
 
         total_lengths = dict()
 
-        for i, node in enumerate(tree2.traverse_preorder()):
+        for i, node in enumerate(helpers.preorder_traversal(tree2.root)):
 
             if not node.label:
                 node_name = helpers.get_unnnamed_node_label(i)
