@@ -93,10 +93,10 @@ def get_parser():
     parser.add_argument('--steps',
                         default=1000,
                         type=int,
-                        help="Number of steps to use for the SVI")
+                        help="Number of steps to use for the SVI. Increasing this number will make runtime increase, but yield more accurate results.")
 
     parser.add_argument('--lr',
-                        default=0.1,
+                        default=0.05,
                         type=float,
                         help="Adam learning rate")
 
