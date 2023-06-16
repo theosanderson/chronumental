@@ -342,7 +342,7 @@ def main():
 
             state, loss = svi.update(state)
             if np.isnan(loss):
-                print("There may have been a 'gradient explosion'. This run may not be successful (you can stop it with ctrl-C). Suggested troubleshooting steps: specify a low learning rate e.g. '--lr 0.005', or possibly an initial clock rate.")
+                print("There may have been a 'gradient explosion'. This run may not be successful (you can stop it with ctrl-C). Suggested troubleshooting steps: specify a low learning rate e.g. '--lr 0.005'.")
 
             if loss < lowest_loss:
                 best_params = svi.get_params(state)
