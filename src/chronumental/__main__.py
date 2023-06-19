@@ -302,6 +302,9 @@ def main():
 
         print(f"Root to tip regression: got rate of: {slope_per_year}")
         clock_rate = slope_per_year
+        if clock_rate < 0:
+            raise ValueError("ERROR: Root-to-tip regression predicted a negative mutation rate. If your dataset is correct you will need to manually specify an initial clock rate with --clock.")
+     
 
     if clock_rate < 1 and not args.treat_mutation_units_as_normalised_to_genome_size:
         raise ValueError(
