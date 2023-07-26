@@ -96,7 +96,7 @@ def get_parser():
                         help="Number of steps to use for the SVI. Increasing this number will make runtime increase, but yield more accurate results.")
 
     parser.add_argument('--lr',
-                        default=0.05,
+                        default=0.01,
                         type=float,
                         help="Adam learning rate")
 
@@ -327,7 +327,8 @@ def main():
         terminal_target_dates_array=terminal_target_dates_array,
         terminal_target_errors_array=terminal_target_errors_array,
         ref_point_distance=ref_point_distance,
-        model_configuration=model_configuration)
+        model_configuration=model_configuration,
+        terminal_names=terminal_names)
 
     print("Performing SVI:")
     optimiser = optim.ClippedAdam(
