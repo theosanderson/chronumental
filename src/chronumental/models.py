@@ -19,6 +19,7 @@ class ChronumentalModelBase(object):
         self.ref_point_distance = kwargs['ref_point_distance']
 
         self.set_initial_time()
+        self.terminal_names = kwargs['terminal_names']
 
     def get_logging_results(self, params):
         results = collections.OrderedDict()
@@ -168,7 +169,7 @@ class HorseShoeLike(ChronumentalModelBase):
     def get_logging_results(self, params):
         results = super().get_logging_results(params)
         results['mutation_rate'] = self.get_mutation_rate(params)
-        results['argmax_variances_param'] = onp.argmax(params['variances_param'])
+        results['argmax_variances_param'] = self.terminal_names[onp.argmax(params['variances_param'])]
         results['median_variances_param'] = onp.median(params['variances_param'])
         results['max_variances_param'] = onp.max(params['variances_param'])
         results['tau'] = params['tau_param']
