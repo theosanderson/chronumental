@@ -254,7 +254,7 @@ class HorseShoeLike(ChronumentalModelBase):
                                     constraint=dist.constraints.positive)
         
         tau_param = numpyro.param("tau_param",
-                                    1000,
+                                    1,
                                     constraint=dist.constraints.positive)
         tau = numpyro.sample("tau",
                                       dist.Delta(tau_param))
