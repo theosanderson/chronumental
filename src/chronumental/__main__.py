@@ -90,13 +90,28 @@ def get_parser():
         "Scale factor for date distribution. Essentially a measure of how uncertain we think the measured dates are."
     )
 
+    parser.add_argument(
+        '--initial_tau',
+        default=3.2,
+        type=float,
+        help="Initial value for the tau parameter in the model. Only applies to Horseshoe.")
+    
+    parser.add_argument(
+        '--hs_scale',
+        default=86917549.587,
+        type=float,
+        help="hs scale parameter in the model. Only applies to Horseshoe.")
+    
+
+    
+
     parser.add_argument('--steps',
-                        default=1000,
+                        default=20000,
                         type=int,
                         help="Number of steps to use for the SVI. Increasing this number will make runtime increase, but yield more accurate results.")
 
     parser.add_argument('--lr',
-                        default=0.01,
+                        default=0.03,
                         type=float,
                         help="Adam learning rate")
 
@@ -317,7 +332,10 @@ def main():
         "expected_min_between_transmissions":
         args.expected_min_between_transmissions,
         "enforce_exact_clock": args.enforce_exact_clock,
-        "variance_on_clock_rate": args.variance_on_clock_rate
+        "variance_on_clock_rate": args.variance_on_clock_rate,
+        "initial_tau": args.initial_tau,
+        "hs_scale": args.hs_scale,
+        "fixed_tau": True
     }
 
     my_model = models.models[args.model](
