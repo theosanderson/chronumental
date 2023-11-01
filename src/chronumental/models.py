@@ -58,6 +58,8 @@ class DeltaGuideWithStrictLearntClock(ChronumentalModelBase):
             'variance_on_clock_rate']
         self.expected_min_between_transmissions = kwargs[
             'model_configuration']['expected_min_between_transmissions']
+        
+        
 
         super().__init__(**kwargs)
 
@@ -163,6 +165,10 @@ class HorseShoeLike(ChronumentalModelBase):
             'variance_on_clock_rate']
         self.expected_min_between_transmissions = kwargs[
             'model_configuration']['expected_min_between_transmissions']
+        
+        self.initial_tau = kwargs['model_configuration']['initial_tau']
+        self.fixed_tau = kwargs['model_configuration']['fixed_tau']
+        self.hs_scale = kwargs['model_configuration']['hs_scale']
 
         super().__init__(**kwargs)
 
@@ -216,7 +222,7 @@ class HorseShoeLike(ChronumentalModelBase):
 
         calced_dates = self.calc_dates(branch_times, root_date)
 
-        hs_scale = 1
+        hs_scale = self.hs_scale
 
         tau = numpyro.sample("tau",
                                    dist.HalfCauchy(hs_scale))
@@ -254,10 +260,10 @@ class HorseShoeLike(ChronumentalModelBase):
                                     constraint=dist.constraints.positive)
         
         tau_param = numpyro.param("tau_param",
-                                    1,
+                                    self.initial_tau,
                                     constraint=dist.constraints.positive)
         tau = numpyro.sample("tau",
-                                      dist.Delta(tau_param))
+                                      dist.Delta(tau_param if not self.fixed_tau else self.initial_tau))
         
         sample_variances = numpyro.sample("lambda",
                                     dist.Delta(variances))
