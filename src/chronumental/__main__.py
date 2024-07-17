@@ -356,7 +356,7 @@ def main():
 
     num_steps = args.steps
     was_interrupted = False
-    lowest_loss = np.Inf
+    lowest_loss = np.inf
     best_params = None
     for step in range(num_steps):
 
