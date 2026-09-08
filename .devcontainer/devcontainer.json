@@ -1,15 +1,14 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.236.0/containers/python-3
+// https://github.com/devcontainers/images/tree/main/src/python
 {
   "name": "Python 3",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      // Update 'VARIANT' to pick a Python version: 3, 3.10, 3.9, 3.8, 3.7, 3.6
-      // Append -bullseye or -buster to pin to an OS version.
-      // Use -bullseye variants on local on arm64/Apple Silicon.
-      "VARIANT": "3.10-bullseye",
+      // Update 'VARIANT' to pick a Python version: 3, 3.13, 3.12, 3.11
+      // Append -bookworm to pin to an OS version.
+      "VARIANT": "3.12-bookworm",
       // Options
       "NODE_VERSION": "lts/*"
     }

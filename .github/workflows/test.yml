@@ -14,19 +14,32 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, "3.10", 3.11, 3.12]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .
+          pip install . pytest
+      - name: Unit tests
+        run: |
+          pytest tests
       - name: Test
         run: |
-          chronumental --dates ./test_data/ebola.metadata.csv --tree ./test_data/divergence_tree.nexus --dates_out dates_chron.tsv --tree_out tree_chron.nwk --steps 200 --treat_mutation_units_as_normalised_to_genome_size 19000
+          chronumental --dates ./test_data/ebola.metadata.csv --tree ./test_data/divergence_tree.nexus --dates_out dates_chron.tsv --tree_out tree_chron.nwk --steps 5000 --treat_mutation_units_as_normalised_to_genome_size 19000 | tee fit.log
+          grep -q Converged fit.log
+      - name: Test learnt clock variance
+        run: |
+          chronumental --dates ./test_data/ebola.metadata.csv --tree ./test_data/divergence_tree.nexus --dates_out dates_var.tsv --tree_out tree_var.nwk --steps 20 --floating_clock_rate --variance_on_clock_rate --treat_mutation_units_as_normalised_to_genome_size 19000
+      - name: Test the optional flags
+        run: |
+          chronumental --dates ./test_data/ebola.metadata.csv --tree ./test_data/divergence_tree.nexus --dates_out dates_flags.tsv --tree_out tree_flags.nwk --steps 100 --disable_early_stopping --clock_filter_iqd 4 --initialise clock --multiply_date_precision --name_all_nodes --output_unit years --treat_mutation_units_as_normalised_to_genome_size 19000

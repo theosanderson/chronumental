@@ -2,17 +2,21 @@ public-latest.all.masked.pb
 public-latest.all.nwk.gz
 public-latest.metadata.tsv.gz
 timetree_public-latest.all.nwk.gz
-dist/chronumental-0.0.1-py3-none-any.whl
-dist/chronumental-0.0.1.tar.gz
-src/chronumental.egg-info/dependency_links.txt
-src/chronumental.egg-info/PKG-INFO
-src/chronumental.egg-info/SOURCES.txt
-src/chronumental.egg-info/top_level.txt
-src/chronumental/__pycache__/__init__.cpython-39.pyc
-src/chronumental/__pycache__/__main__.cpython-39.pyc
-src/chronumental/__pycache__/helpers.cpython-39.pyc
-src/wandb/**
+# Build artefacts
+build/
+dist/
+*.egg-info/
+__pycache__/
 **.pyc
+
+# Written at build time by setuptools_scm
+src/chronumental/_version.py
+
+# Local virtualenvs
+.venv/
+venv/
+
+src/wandb/**
 src/tree.nwk
 src/dates.tsv
 src/dates_chron.tsv

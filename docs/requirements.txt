@@ -1,11 +1,5 @@
-numpyro
-alive-progress
-pandas
-treeswift
-scipy
-xopen
+# The chronumental package itself is installed from the repository root (see
+# .readthedocs.yaml); its runtime dependencies come from setup.cfg.
 sphinx-argparse
-sphinx-rtd-theme
 myst-parser
-sphinx-book-theme
 furo

@@ -2,14 +2,17 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-  - repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.32.0
+  # Was pre-commit/mirrors-yapf, which is archived and pinned to yapf 0.32.0.
+  # That version imports lib2to3, removed from the standard library, so it
+  # cannot run on current Python. yapf publishes its own hooks upstream.
+  - repo: https://github.com/google/yapf
+    rev: v0.43.0
     hooks:
       - id: yapf
         additional_dependencies: [toml]
