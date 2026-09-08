@@ -771,16 +771,6 @@ def main():
         else:
             print("No terminal to ask on, so saving the results so far.")
     if to_save.strip().lower() == "y":
-        # Reuse the tree already parsed rather than reading the file again.
-        # Setup labelled every node; the ones it invented are dropped again
-        # here unless --name_all_nodes asked for them, so the output tree is
-        # the same either way. Parsing twice cost about three seconds and a
-        # second copy of the tree at 300k tips, and more above that.
-        if not args.name_all_nodes:
-            for node in helpers.preorder_traversal(tree.root):
-                if node.label in invented_labels:
-                    node.label = None
-
         # Every node's date comes from the same path sum the model used, so
         # the tree and the dates agree by construction. The root's own branch
         # is zeroed inside the sum, matching the zero written for it below: a
@@ -795,18 +785,16 @@ def main():
         unit = helpers.DAYS_PER_YEAR if args.output_unit == "years" else 1
 
         node_day_by_name = {}
-        for i, node in enumerate(helpers.preorder_traversal(tree.root)):
-            if not node.label:
-                node_name = helpers.get_unnnamed_node_label(i)
-                if args.name_all_nodes:
-                    node.label = node_name
-            else:
-                node_name = node.label.replace("'", "")
-            pos = name_to_pos[node_name]
+        for node in helpers.preorder_traversal(tree.root):
+            pos = name_to_pos[node.label]
             node.edge_length = (0.0 if node.parent is None else
                                 branch_times[pos] / unit)
-            if node.label:
-                node_day_by_name[node_name] = node_days[pos]
+            # Keep setup labels for the lookup, then omit invented ones from
+            # both outputs unless --name_all_nodes was requested.
+            if not args.name_all_nodes and node.label in invented_labels:
+                node.label = None
+            else:
+                node_day_by_name[node.label] = node_days[pos]
 
         print("Writing tree to file")
         tree.write_tree_newick(args.tree_out)
